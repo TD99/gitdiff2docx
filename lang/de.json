@@ -1,0 +1,17 @@
+{
+  "enter_commit1": "Geben Sie den ersten Commit-Hash ein:",
+  "enter_commit2": "Geben Sie den letzten Commit-Hash ein:",
+  "enter_output_docx": "Geben Sie den Pfad der Ausgabedatei (.docx) ein (z.B. output.docx):",
+  "include_line_numbers": "Zeilennummern einfügen? (ja/nein):",
+  "yes": "ja",
+  "no": "nein",
+  "select_language": "Wählen Sie eine Sprache (verfügbar: {languages}):",
+  "no_changes_found": "Keine geänderten Dateien zwischen {commit1} und {commit2} gefunden.",
+  "saving_report": "Bericht gespeichert unter {output_docx}",
+  "file": "Datei",
+  "code_changes": "Codeänderungen",
+  "no_significant_changes": "Keine signifikanten Änderungen gefunden.",
+  "git_changes_report": "Git-Änderungsbericht",
+  "enter_diff_font": "Geben Sie die Schriftart für den Code ein (z.B. Courier New):",
+  "enter_diff_font_size": "Geben Sie die Schriftgrösse für den Code ein (z.B. 12):"
+}

@@ -1,0 +1,17 @@
+{
+  "enter_commit1": "Enter the first commit hash:",
+  "enter_commit2": "Enter the last commit hash:",
+  "enter_output_docx": "Enter the output .docx file path (e.g., output.docx):",
+  "include_line_numbers": "Include line numbers? (yes/no):",
+  "yes": "yes",
+  "no": "no",
+  "select_language": "Select a language (available: {languages}):",
+  "no_changes_found": "No changed files found between {commit1} and {commit2}.",
+  "saving_report": "Report saved to {output_docx}",
+  "file": "File",
+  "code_changes": "Code Changes",
+  "no_significant_changes": "No significant changes found.",
+  "git_changes_report": "Git Changes Report",
+  "enter_diff_font": "Enter the font for the code (e.g., Courier New):",
+  "enter_diff_font_size": "Enter the font size for the code (e.g., 12):"
+}
