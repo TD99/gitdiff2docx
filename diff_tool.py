@@ -1,11 +1,18 @@
 import os
 import json
 import subprocess
+import html
+import re
+from typing import Optional
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 from datetime import datetime
+from pygments import highlight
+from pygments.lexers import get_lexer_for_filename, guess_lexer, TextLexer
+from pygments.formatters import HtmlFormatter
+from bs4 import BeautifulSoup
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -152,6 +159,30 @@ def extract_line_numbers(diff_lines):
             current_line += 1
     return line_numbers
 
+def highlight_code(code: str, filename: str) -> list[tuple[str, Optional[str]]]:
+    try:
+        lexer = get_lexer_for_filename(filename, code)
+    except Exception:
+        lexer = TextLexer()
+
+    formatter = HtmlFormatter(nowrap=True, noclasses=True, style="default")
+    highlighted = highlight(code, lexer, formatter)
+    soup = BeautifulSoup(highlighted, "html.parser")
+
+    result = []
+    for elem in soup.descendants:
+        if isinstance(elem, str):
+            continue
+        if elem.name == "span":
+            style = elem.get("style", "")
+            # Unescaped text
+            text = html.unescape(elem.decode_contents())
+            color_match = re.search(r"color:\s*#([0-9a-fA-F]{6})", style)
+            color_hex = color_match.group(1) if color_match else None
+            if text:
+                result.append((text, color_hex))
+    return result
+
 # Add a formatted code diff table
 def add_diff_table(document, diff_lines, line_numbers, include_numbers):
     table = document.add_table(rows=0, cols=2 if include_numbers else 1)
@@ -161,23 +192,36 @@ def add_diff_table(document, diff_lines, line_numbers, include_numbers):
         row_cells = table.add_row().cells
 
         if include_numbers:
-            row_cells[0].text = str(line_number)
-            row_cells[0].paragraphs[0].runs[0].font.size = Pt(9)
+            number_paragraph = row_cells[0].paragraphs[0]
+            number_run = number_paragraph.add_run(str(line_number))
+            number_run.font.size = Pt(9)
 
-        row_cells[-1].text = line.strip()
+        para = row_cells[-1].paragraphs[0]
 
-        # Apply font
-        run = row_cells[-1].paragraphs[0].runs[0]
-        run.font.name = config.get("diff_font", "Courier New")
-        run.font.size = Pt(int(config.get("diff_font_size", 12)))
+        original_line = line.strip()
+        code_line = original_line[1:] if original_line.startswith(('+', '-')) else original_line
 
-        # Apply background color based on type of change
-        if line.startswith("+"):
-            shading_elm = parse_xml(r'<w:shd {} w:fill="D0FFD0"/>'.format(nsdecls("w")))  # Light Green: Additions
-        elif line.startswith("-"):
-            shading_elm = parse_xml(r'<w:shd {} w:fill="FFD0D0"/>'.format(nsdecls("w")))  # Light Red: Deletions
+        highlighted_parts = highlight_code(code_line, file)
+
+        if not highlighted_parts:
+            run = para.add_run(line.strip())
+            run.font.name = config.get("diff_font", "Courier New")
+            run.font.size = Pt(int(config.get("diff_font_size", 12)))
         else:
-            shading_elm = parse_xml(r'<w:shd {} w:fill="F5F5F5"/>'.format(nsdecls("w")))  # Light Gray: Context
+            for text, color_hex in highlighted_parts:
+                run = para.add_run(text)
+                run.font.name = config.get("diff_font", "Courier New")
+                run.font.size = Pt(int(config.get("diff_font_size", 12)))
+                if color_hex:
+                    run.font.color.rgb = RGBColor.from_string(color_hex.upper())
+
+        # Apply diff background color
+        if line.startswith("+"):
+            shading_elm = parse_xml(r'<w:shd {} w:fill="D0FFD0"/>'.format(nsdecls("w")))
+        elif line.startswith("-"):
+            shading_elm = parse_xml(r'<w:shd {} w:fill="FFD0D0"/>'.format(nsdecls("w")))
+        else:
+            shading_elm = parse_xml(r'<w:shd {} w:fill="F5F5F5"/>'.format(nsdecls("w")))
         row_cells[-1]._element.get_or_add_tcPr().append(shading_elm)
 
 # ------------------------------------------------------------------------------
