@@ -122,20 +122,24 @@ def add_legend_table(document):
     legend_table.style = "Table Grid"
 
     legend_data = [
-        (lang["legend_add"], "D0FFD0"),
-        (lang["legend_remove"], "FFD0D0"),
-        (lang["legend_context"], "F5F5F5")
+        (lang["legend_add"], "D0FFD0", "+"),
+        (lang["legend_remove"], "FFD0D0", "-"),
+        (lang["legend_context"], "F5F5F5", ""),
     ]
 
-    for label, color in legend_data:
-        row = legend_table.add_row().cells
-        row[0].text = label
-        run = row[1].paragraphs[0].add_run(" ")
+    for label, color, symbol in legend_data:
+        column = legend_table.add_row().cells
+        column[0].text = label
+        run = column[1].paragraphs[0].add_run(" ")
         shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), color))
-        row[1]._element.get_or_add_tcPr().append(shading)
+        column[1]._element.get_or_add_tcPr().append(shading)
+        column[1].text = symbol
 
-doc.add_heading(lang["legend"], level=2)
+doc.add_heading(lang["legend"], level=config.get("heading_level", 2))
 add_legend_table(doc)
+
+doc.add_page_break()
+doc.add_heading(lang["diffs"], level=config.get("heading_level", 2))
 
 # Extract line numbers from git diff
 def extract_line_numbers(diff_lines):
@@ -203,11 +207,10 @@ verbose = config.get("verbose", False)
 
 for file in changed_files:
     doc.add_page_break()
-    doc.add_heading(f"{lang['file']}: {file}", level=2)
+    doc.add_heading(f"{lang['file']}: {file}", level=config.get("heading_level", 2) + 1)
 
     if verbose:
         print(lang["processing_file"].format(file=file))
-
     
     # Get the full content of the file in both commits
     try:
@@ -228,7 +231,6 @@ for file in changed_files:
     diff_lines = list(difflib.unified_diff(old_content, new_content, lineterm=""))
 
     if diff_lines:
-        doc.add_paragraph(lang["code_changes"] + ":", style="Heading 3")
         # Remove hunk headers (lines starting with @@)
         filtered_diff_lines = [
             line for line in diff_lines
@@ -240,7 +242,6 @@ for file in changed_files:
         add_diff_table(doc, filtered_diff_lines, line_numbers, config.get("include_line_numbers", False))
     else:
         doc.add_paragraph(lang["no_significant_changes"], style="Italic")
-
 
     if verbose:
         print_green(lang["processing_done"].format(file=file))

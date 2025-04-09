@@ -1,5 +1,6 @@
 {
   "code_changes": "Codeänderungen",
+  "diffs": "Codeänderungen",
   "enter_commit1": "Geben Sie den ersten Commit-Hash ein (optional):",
   "enter_commit2": "Geben Sie den letzten Commit-Hash ein (optional):",
   "enter_output_docx": "Geben Sie den Pfad der Ausgabedatei (.docx) ein (z.B. output.docx):",

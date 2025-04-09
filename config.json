@@ -4,5 +4,6 @@
     "line_numbers": true,
     "diff_font": "Courier New",
     "diff_font_size": 12,
-    "open_after_creation": true
+    "open_after_creation": true,
+    "heading_level": 3
 }
