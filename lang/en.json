@@ -4,6 +4,7 @@
   "enter_commit2": "Enter the last commit hash (optional):",
   "enter_output_docx": "Enter the output .docx file path (e.g., output.docx):",
   "enter_target_dir": "Enter the target Git directory:",
+  "error_opening_file": "Error opening file {file}: {error}",
   "error_removing_file": "Error removing file {output_docx}: {error}",
   "error_saving_file": "Error saving file {output_docx}: {error}",
   "exiting": "Exiting...",

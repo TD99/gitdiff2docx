@@ -4,6 +4,7 @@
   "enter_commit2": "Geben Sie den letzten Commit-Hash ein (optional):",
   "enter_output_docx": "Geben Sie den Pfad der Ausgabedatei (.docx) ein (z.B. output.docx):",
   "enter_target_dir": "Geben Sie das Git-Zielverzeichnis ein:",
+  "error_opening_file": "Fehler beim Öffnen der Datei {file}: {error}",
   "error_removing_file": "Fehler beim Entfernen der Datei {output_docx}: {error}",
   "error_saving_file": "Fehler beim Speichern der Datei {output_docx}: {error}",
   "exiting": "Beenden...",
