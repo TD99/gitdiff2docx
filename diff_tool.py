@@ -206,23 +206,39 @@ for file in changed_files:
     if verbose:
         print(lang["processing_file"].format(file=file))
 
-    # Get the git diff for this file (only modified lines)
-    diff_output = subprocess.run(
-        ["git", "diff", "-U0", commit1, commit2, "--", file], capture_output=True, text=True, encoding="utf-8"
-    ).stdout
+    
+    # Get the full content of the file in both commits
+    try:
+        old_content = subprocess.run(
+            ["git", "show", f"{commit1}:{file}"], capture_output=True, text=True, encoding="utf-8"
+        ).stdout.splitlines()
+    except Exception:
+        old_content = []
 
-    if diff_output:
+    try:
+        new_content = subprocess.run(
+            ["git", "show", f"{commit2}:{file}"], capture_output=True, text=True, encoding="utf-8"
+        ).stdout.splitlines()
+    except Exception:
+        new_content = []
+
+    import difflib
+    diff_lines = list(difflib.unified_diff(old_content, new_content, lineterm=""))
+
+    if diff_lines:
         doc.add_paragraph(lang["code_changes"] + ":", style="Heading 3")
-        diff_lines = [
-           line for line in diff_output.splitlines()
+        # Remove hunk headers (lines starting with @@)
+        filtered_diff_lines = [
+            line for line in diff_lines
             if (line.startswith("+") and not line.startswith("+++")) or
-            (line.startswith("-") and not line.startswith("---")) or
-            line.startswith("@@")
+               (line.startswith("-") and not line.startswith("---")) or
+               (not line.startswith(("+", "-", "@", "diff", "index")))
         ]
         line_numbers = extract_line_numbers(diff_lines)
-        add_diff_table(doc, diff_lines, line_numbers, config.get("include_line_numbers", False))
+        add_diff_table(doc, filtered_diff_lines, line_numbers, config.get("include_line_numbers", False))
     else:
         doc.add_paragraph(lang["no_significant_changes"], style="Italic")
+
 
     if verbose:
         print_green(lang["processing_done"].format(file=file))
