@@ -3,5 +3,6 @@
     "verbose": true,
     "line_numbers": true,
     "diff_font": "Courier New",
-    "diff_font_size": 12
+    "diff_font_size": 12,
+    "open_after_creation": true
 }

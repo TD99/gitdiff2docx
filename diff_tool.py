@@ -234,3 +234,10 @@ except Exception as e:
     exit()
 
 print_green(lang["saving_report"].format(output_docx=output_docx))
+
+if config.get("open_after_creation", False):
+    try:
+        os.startfile(output_docx)
+    except Exception as e:
+        print_red(lang["error_opening_file"].format(output_docx=output_docx, error=str(e)))
+        exit()
