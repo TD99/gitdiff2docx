@@ -20,6 +20,7 @@
   "no_git_repo_found": "No .git folder found in {target_dir}.",
   "no_significant_changes": "No significant changes found.",
   "output_exists": "The output file {output_docx} already exists. Do you want to overwrite it? (yes/no):",
+  "press_enter_to_retry": "Press Enter to retry...",
   "processing_done": "Processing done for file: {file}",
   "processing_file": "Processing file: {file}",
   "report_generated_on": "Report generated on {date}",

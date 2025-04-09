@@ -187,14 +187,16 @@ def add_diff_table(document, diff_lines, line_numbers, include_numbers):
 if os.path.exists(output_docx):
     if not ask_yes_no(lang["output_exists"].format(output_docx=output_docx), lang):
         print(lang["exiting"])
+        input("Press Enter to exit...")
         exit()
     else:
-        try:
-            with open(output_docx, "a", encoding="utf-8"):
-                pass
-        except Exception as e:
-            print_red(lang["error_removing_file"].format(output_docx=output_docx, error=str(e)))
-            exit()
+        while True:
+            try:
+                with open(output_docx, "a", encoding="utf-8"):
+                    break
+            except Exception as e:
+                print_red(lang["error_removing_file"].format(output_docx=output_docx, error=str(e)))
+                input(lang["press_enter_to_retry"])
 
 # Process each changed file
 verbose = config.get("verbose", False)

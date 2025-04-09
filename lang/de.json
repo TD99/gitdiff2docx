@@ -20,6 +20,7 @@
   "no_git_repo_found": "Im Verzeichnis {target_dir} wurde kein .git-Ordner gefunden.",
   "no_significant_changes": "Keine signifikanten Änderungen gefunden.",
   "output_exists": "Die Ausgabedatei {output_docx} existiert bereits. Möchten Sie sie überschreiben? (ja/nein):",
+  "press_enter_to_retry": "Drücken Sie die Eingabetaste, um es erneut zu versuchen...",
   "processing_done": "Verarbeitung abgeschlossen für Datei: {file}",
   "processing_file": "Verarbeite Datei: {file}",
   "report_generated_on": "Bericht erstellt am {date}",
