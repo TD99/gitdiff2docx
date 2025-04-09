@@ -171,5 +171,4 @@ cython_debug/
 .pypirc
 
 # Custom
-output.docx
-~$output.docx
+*.docx
