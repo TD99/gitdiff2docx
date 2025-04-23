@@ -141,16 +141,17 @@ def add_legend_table(document):
     legend_table.style = "Table Grid"
 
     legend_data = [
-        (lang["legend_add"], config.get("add_color", "D0FFD0")),
-        (lang["legend_remove"], config.get("remove_color", "FFD0D0")),
-        (lang["legend_neutral"], config.get("neutral_color", "F5F5F5")),
+        (lang["legend_add"], config.get("add_color", "D0FFD0"), "+"),
+        (lang["legend_remove"], config.get("remove_color", "FFD0D0"), "-"),
+        (lang["legend_neutral"], config.get("neutral_color", "F5F5F5"), " "),
     ]
 
-    for label, color in legend_data:
+    for label, color, symbol in legend_data:
         column = legend_table.add_row().cells
         column[0].text = label
         shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), color))
         column[1]._element.get_or_add_tcPr().append(shading)
+        column[1].text = symbol
 
 doc.add_heading(lang["legend"], level=config.get("heading_level", 2))
 add_legend_table(doc)
