@@ -14,7 +14,7 @@
   "invalid_target_dir": "Ungültiges Verzeichnis. Bitte geben Sie ein gültiges Verzeichnis ein.",
   "legend": "Legende",
   "legend_add": "Hinzugefügte Zeile",
-  "legend_context": "Unveränderte Zeile",
+  "legend_neutral": "Unveränderte Zeile",
   "legend_remove": "Entfernte Zeile",
   "no": "nein",
   "no_changes_found": "Keine geänderten Dateien zwischen {commit1} und {commit2} gefunden.",

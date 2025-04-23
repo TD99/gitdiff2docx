@@ -12,7 +12,6 @@ from docx.oxml.ns import nsdecls
 from pygments import lex
 from pygments.lexers import guess_lexer_for_filename, guess_lexer
 from pygments.styles import get_style_by_name
-from pygments.token import Token
 
 # The directory where this script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -142,15 +141,14 @@ def add_legend_table(document):
     legend_table.style = "Table Grid"
 
     legend_data = [
-        (lang["legend_add"], "D0FFD0", "+"),
-        (lang["legend_remove"], "FFD0D0", "-"),
-        (lang["legend_context"], "F5F5F5", ""),
+        (lang["legend_add"], config.get("add_color", "D0FFD0")),
+        (lang["legend_remove"], config.get("remove_color", "FFD0D0")),
+        (lang["legend_neutral"], config.get("neutral_color", "F5F5F5")),
     ]
 
-    for label, color, symbol in legend_data:
+    for label, color in legend_data:
         column = legend_table.add_row().cells
         column[0].text = label
-        run = column[1].paragraphs[0].add_run(symbol)
         shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), color))
         column[1]._element.get_or_add_tcPr().append(shading)
 
@@ -194,11 +192,11 @@ def add_diff_table(document, diff_lines, line_numbers, include_numbers, lexer):
 
         # Apply background shading
         if line.startswith("+"):
-            fill = "D0FFD0"
+            fill = config.get("add_color", "D0FFD0")
         elif line.startswith("-"):
-            fill = "FFD0D0"
+            fill = config.get("remove_color", "FFD0D0")
         else:
-            fill = "F5F5F5"
+            fill = config.get("neutral_color", "F5F5F5")
         shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), fill))
         code_cell._element.get_or_add_tcPr().append(shading)
 

@@ -14,7 +14,7 @@
   "invalid_target_dir": "Invalid directory. Please enter a valid path.",
   "legend": "Legend",
   "legend_add": "Added line",
-  "legend_context": "Unchanged line",
+  "legend_neutral": "Unchanged line",
   "legend_remove": "Removed line",
   "no": "no",
   "no_changes_found": "No changed files found between {commit1} and {commit2}.",
