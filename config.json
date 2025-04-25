@@ -1,4 +1,5 @@
 {
+    "$schema": "./schemas/config.schema.json",
     "language": "de",
     "verbose": true,
     "diff_font": "Courier New",
