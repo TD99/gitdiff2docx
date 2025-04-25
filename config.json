@@ -11,5 +11,6 @@
     "add_symbol": "+",
     "remove_symbol": "-",
     "neutral_symbol": " ",
-    "file_encoding": "utf-8"
+    "file_encoding": "utf-8",
+    "include_first_commit": true
 }

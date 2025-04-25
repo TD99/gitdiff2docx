@@ -8,6 +8,8 @@ from datetime import datetime
 
 from PIL import Image
 
+from difflib import SequenceMatcher
+
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches, Cm
 from docx.oxml import parse_xml
@@ -126,14 +128,37 @@ while True:
     os.chdir(target_dir)
     break
 
+# FIRST COMMIT
 commit1 = input(lang["enter_commit1"] + " ").strip()
-if not commit1:
+commit1_specified = bool(commit1)
+if not commit1_specified:
     commit1 = subprocess.run(
         ["git", "rev-list", "--max-parents=0", "HEAD"],
         capture_output=True, text=True, encoding="utf-8"
     ).stdout.strip()
+
+# Special case: if commit1 is the very first commit, we cannot add a caret
+very_first_commit_hash = subprocess.run(
+    ["git", "rev-list", "--max-parents=0", "HEAD"],
+    capture_output=True, text=True, encoding="utf-8"
+).stdout.strip()
+is_very_first_commit = (commit1 == very_first_commit_hash)
+
+
+if not (commit1.endswith("^") or "~" in commit1) and commit1 != "HEAD":
+    include_first_commit = config.get("include_first_commit", False)
+
+    if is_very_first_commit and include_first_commit:
+        # Special revision number for an empty tree (state before any commit)
+        empty_tree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        commit1 = empty_tree
+    elif include_first_commit:
+        commit1 = f"{commit1}^" if include_first_commit else commit1
+
+if not commit1_specified:
     print(lang["using_first_commit"].format(commit1=commit1))
 
+# LAST COMMIT
 commit2 = input(lang["enter_commit2"] + " ").strip()
 if not commit2:
     commit2 = subprocess.run(
@@ -149,7 +174,6 @@ if not output_docx:
 
 # ------------------------------------------------------------------------------
 # Diff generation
-
 changed_files = subprocess.run(
     ["git", "diff", "--name-only", commit1, commit2],
     capture_output=True, text=True, encoding="utf-8"
@@ -305,7 +329,6 @@ def add_image(document, file_bytes, image_name):
 if os.path.exists(output_docx):
     if not ask_yes_no(lang["output_exists"].format(output_docx=output_docx), lang):
         print(lang["exiting"])
-        input("Press Enter to exit...")
         exit()
     else:
         while True:
@@ -366,18 +389,46 @@ for index, file in enumerate(changed_files):
     except:
         lexer = guess_lexer(sample or "")
 
-    import difflib
-    diff_lines = list(difflib.unified_diff(old_content, new_content, lineterm=""))
+    matcher = SequenceMatcher(None, old_content, new_content)
+    diff_lines = []
+    line_nums = []
 
+    add_symbol = config.get("add_symbol", "+")
+    remove_symbol = config.get("remove_symbol", "-")
+    neutral_symbol = config.get("neutral_symbol", " ")
+
+    old_idx = new_idx = 0
+
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            for line in new_content[j1:j2]:
+                diff_lines.append(f" {line}")
+                line_nums.append(new_idx + 1)
+                new_idx += 1
+                old_idx += 1
+        elif tag == "replace":
+            for line in old_content[i1:i2]:
+                diff_lines.append(f"-{line}")
+                line_nums.append(old_idx + 1)
+                old_idx += 1
+            for line in new_content[j1:j2]:
+                diff_lines.append(f"+{line}")
+                line_nums.append(new_idx + 1)
+                new_idx += 1
+        elif tag == "delete":
+            for line in old_content[i1:i2]:
+                diff_lines.append(f"-{line}")
+                line_nums.append(old_idx + 1)
+                old_idx += 1
+        elif tag == "insert":
+            for line in new_content[j1:j2]:
+                diff_lines.append(f"+{line}")
+                line_nums.append(new_idx + 1)
+                new_idx += 1
+
+    # Falls etwas produziert wurde, Tabelle hinzufügen
     if diff_lines:
-        filtered = [
-            l for l in diff_lines
-            if (l.startswith("+") and not l.startswith("+++")) or
-               (l.startswith("-") and not l.startswith("---")) or
-               (not l.startswith(("+", "-", "@", "diff", "index")))
-        ]
-        line_nums = extract_line_numbers(diff_lines)
-        add_diff_table(doc, filtered, line_nums, lexer)
+        add_diff_table(doc, diff_lines, line_nums, lexer)
     else:
         doc.add_paragraph(lang["no_significant_changes"], style="Italic")
 
