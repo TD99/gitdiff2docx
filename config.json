@@ -8,5 +8,8 @@
     "add_color": "D0FFD0",
     "remove_color": "FFD0D0",
     "neutral_color": "F5F5F5",
+    "add_symbol": "+",
+    "remove_symbol": "-",
+    "neutral_symbol": " ",
     "file_encoding": "utf-8"
 }

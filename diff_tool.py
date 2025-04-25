@@ -1,11 +1,15 @@
 import os
 import json
 import subprocess
+import io
+import mimetypes
 
 from datetime import datetime
 
+from PIL import Image
+
 from docx import Document
-from docx.shared import Pt, RGBColor
+from docx.shared import Pt, RGBColor, Inches, Cm
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 
@@ -33,6 +37,33 @@ def print_yellow(text: str):
 
 def print_red(text: str):
     print(f"\033[91m{text}\033[0m")
+
+def is_binary_string(bytes_data):
+    textchars = bytearray({7, 8, 9, 10, 12, 13, 27}
+                          | set(range(0x20, 0x100)) - {0x7f})
+    return bool(bytes_data.translate(None, textchars))
+
+def is_image_file(filename):
+    mimetype, _ = mimetypes.guess_type(filename)
+    return mimetype and mimetype.startswith("image/")
+
+def get_usable_width(document):
+    section = document.sections[0]
+    page_width = section.page_width
+    left_margin = section.left_margin
+    right_margin = section.right_margin
+    return page_width - left_margin - right_margin  # in EMUs
+
+def remove_cell_border(cell, borders=("top", "left", "bottom", "right")):
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    tcBorders = parse_xml(r'<w:tcBorders {}/>'.format(nsdecls('w')))
+    for border in borders:
+        border_element = parse_xml(
+            f'<w:{border} w:val="nil" {nsdecls("w")}/>'
+        )
+        tcBorders.append(border_element)
+    tcPr.append(tcBorders)
 
 # ------------------------------------------------------------------------------
 # Configuration
@@ -143,9 +174,9 @@ def add_legend_table(document):
     legend_table.style = "Table Grid"
 
     legend_data = [
-        (lang["legend_add"], config.get("add_color", "D0FFD0"), "+"),
-        (lang["legend_remove"], config.get("remove_color", "FFD0D0"), "-"),
-        (lang["legend_neutral"], config.get("neutral_color", "F5F5F5"), " "),
+        (lang["legend_add"], config.get("add_color", "D0FFD0"), config.get("add_symbol", "+")),
+        (lang["legend_remove"], config.get("remove_color", "FFD0D0"), config.get("remove_symbol", "-")),
+        (lang["legend_neutral"], config.get("neutral_color", "F5F5F5"), config.get("neutral_symbol", " ")),
     ]
 
     for label, color, symbol in legend_data:
@@ -178,43 +209,56 @@ def extract_line_numbers(diff_lines):
 
 # Add a formatted and syntax-highlighted code diff table
 def add_diff_table(document, diff_lines, line_numbers, lexer):
-    table = document.add_table(rows=0, cols=1)
+    table = document.add_table(rows=0, cols=2)
     table.style = "Table Grid"
+
+    table.columns[0].width = Cm(0.57)
+    table.columns[1].width = get_usable_width(document) - Cm(0.57)
+
+    add_symbol = config.get("add_symbol", "+")
+    remove_symbol = config.get("remove_symbol", "-")
+    neutral_symbol = config.get("neutral_symbol", " ")
 
     for line, line_number in zip(diff_lines, line_numbers):
         row_cells = table.add_row().cells
-
-        code_cell = row_cells[0]
+        symbol_cell = row_cells[0]
+        code_cell = row_cells[1]
 
         # Apply background shading
         if line.startswith("+"):
             fill = config.get("add_color", "D0FFD0")
+            symbol = add_symbol
         elif line.startswith("-"):
             fill = config.get("remove_color", "FFD0D0")
+            symbol = remove_symbol
         else:
             fill = config.get("neutral_color", "F5F5F5")
-        shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), fill))
-        code_cell._element.get_or_add_tcPr().append(shading)
+            symbol = neutral_symbol
 
-        # Prepare the paragraph for syntax-highlighted runs
+        # Background color for both cells
+        for cell in (symbol_cell, code_cell):
+            shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), fill))
+            cell._element.get_or_add_tcPr().append(shading)
+
+        # Hide the border
+        remove_cell_border(symbol_cell, borders=("right",))
+        remove_cell_border(code_cell, borders=("left",))
+
+        # Set paragraph format for symbol cell
+        symbol_paragraph = symbol_cell.paragraphs[0]
+        symbol_paragraph.clear()
+        run_sym = symbol_paragraph.add_run(symbol)
+        run_sym.font.name = config.get("diff_font", "Courier New")
+        run_sym.font.size = Pt(int(config.get("diff_font_size", 12)))
+
+        # Clear and format code paragraph
         paragraph = code_cell.paragraphs[0]
         paragraph.clear()  # remove any auto-inserted text
-
         paragraph.paragraph_format.space_before = Pt(0)
         paragraph.paragraph_format.space_after = Pt(0)
 
-        # Optionally include the diff symbol
-        symbol = ""
-        code_content = line
-        if line.startswith(("+", "-")):
-            symbol = line[0]
-            code_content = line[1:]
-
-        # Add symbol run
-        if symbol:
-            run_sym = paragraph.add_run(symbol)
-            run_sym.font.name = config.get("diff_font", "Courier New")
-            run_sym.font.size = Pt(int(config.get("diff_font_size", 12)))
+        # Strip symbol from content
+        code_content = line[1:]
 
         # Lex and style each token
         for ttype, value in lex(code_content, lexer):
@@ -241,6 +285,20 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
                         except ValueError:
                             pass
 
+# Add images to the document
+def add_image(document, file_bytes, image_name):
+    image_stream = io.BytesIO(file_bytes)
+    try:
+        image = Image.open(image_stream)
+        width, _ = image.size
+        image_stream.seek(0)  # rewind for docx
+        max_width_inches = 6  # ~75% of page width (8 inches)
+        width_inches = min(max_width_inches, width / image.info.get('dpi', (96, 96))[0])
+        document.add_picture(image_stream, width=Inches(width_inches))
+        document.paragraphs[-1].alignment = 1  # center
+    except Exception as e:
+        document.add_paragraph(f"[Error inserting image: {image_name}]")
+
 # ------------------------------------------------------------------------------
 # Main loop
 
@@ -260,26 +318,46 @@ if os.path.exists(output_docx):
 
 verbose = config.get("verbose", False)
 
-for file in changed_files:
-    doc.add_page_break()
+for index, file in enumerate(changed_files):
+    if not index == 0:
+        doc.add_page_break()
+
     doc.add_heading(f"{lang['file']}: {file}", level=config.get("heading_level", 2) + 1)
 
     if verbose:
         print(lang["processing_file"].format(file=file))
 
-    # Get file versions
+    # Try to get binary contents
     try:
-        old_content = subprocess.run(
-            ["git", "show", f"{commit1}:{file}"], capture_output=True, text=True, encoding=file_encoding
-        ).stdout.splitlines()
+        old_bytes = subprocess.run(
+            ["git", "show", f"{commit1}:{file}"],
+            capture_output=True
+        ).stdout
     except:
-        old_content = []
+        old_bytes = b""
+
     try:
-        new_content = subprocess.run(
-            ["git", "show", f"{commit2}:{file}"], capture_output=True, text=True, encoding=file_encoding
-        ).stdout.splitlines()
+        new_bytes = subprocess.run(
+            ["git", "show", f"{commit2}:{file}"],
+            capture_output=True
+        ).stdout
     except:
-        new_content = []
+        new_bytes = b""
+
+    # If binary but not image → skip
+    if is_binary_string(new_bytes) or is_binary_string(old_bytes):
+        if is_image_file(file):
+            # Insert only if the image changed
+            if old_bytes != new_bytes:
+                doc.add_paragraph("REM_Image changed:")
+                add_image(doc, new_bytes, file)
+        else:
+            doc.add_paragraph("REM_Skipped binary file.")
+        continue
+
+    # Fallback for text diff
+    old_content = old_bytes.decode(file_encoding, errors="ignore").splitlines()
+    new_content = new_bytes.decode(file_encoding, errors="ignore").splitlines()
 
     # Choose lexer based on filename and content
     sample = "\n".join(new_content or old_content)
@@ -299,7 +377,7 @@ for file in changed_files:
                (not l.startswith(("+", "-", "@", "diff", "index")))
         ]
         line_nums = extract_line_numbers(diff_lines)
-        add_diff_table(doc, filtered, line_nums, config.get("include_line_numbers", False), lexer)
+        add_diff_table(doc, filtered, line_nums, lexer)
     else:
         doc.add_paragraph(lang["no_significant_changes"], style="Italic")
 
