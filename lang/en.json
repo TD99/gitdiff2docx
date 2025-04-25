@@ -1,4 +1,5 @@
 {
+  "binary_file_skipped": "Binary file changed",
   "diffs": "Code Changes",
   "enter_commit1": "Enter the first commit hash (optional):",
   "enter_commit2": "Enter the last commit hash (optional):",
@@ -10,6 +11,7 @@
   "exiting": "Exiting...",
   "file": "File",
   "git_changes_report": "Git Changes Report",
+  "image_changed": "Image file changed",
   "invalid_target_dir": "Invalid directory. Please enter a valid path.",
   "legend": "Legend",
   "legend_add": "Added line",

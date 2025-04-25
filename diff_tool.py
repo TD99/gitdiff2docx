@@ -372,10 +372,10 @@ for index, file in enumerate(changed_files):
         if is_image_file(file):
             # Insert only if the image changed
             if old_bytes != new_bytes:
-                doc.add_paragraph("REM_Image changed:")
+                doc.add_paragraph(lang['image_changed'], style="Italic")
                 add_image(doc, new_bytes, file)
         else:
-            doc.add_paragraph("REM_Skipped binary file.")
+            doc.add_paragraph(lang['binary_file_skipped'], style="Italic")
         continue
 
     # Fallback for text diff

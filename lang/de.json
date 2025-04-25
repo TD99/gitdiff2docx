@@ -1,4 +1,5 @@
 {
+  "binary_file_skipped": "Binärdatei geändert",
   "diffs": "Codeänderungen",
   "enter_commit1": "Geben Sie den ersten Commit-Hash ein (optional):",
   "enter_commit2": "Geben Sie den letzten Commit-Hash ein (optional):",
@@ -10,6 +11,7 @@
   "exiting": "Beenden...",
   "file": "Datei",
   "git_changes_report": "Git-Änderungsbericht",
+  "image_changed": "Bilddatei geändert",
   "invalid_target_dir": "Ungültiges Verzeichnis. Bitte geben Sie ein gültiges Verzeichnis ein.",
   "legend": "Legende",
   "legend_add": "Hinzugefügte Zeile",
