@@ -8,5 +8,6 @@
     "heading_level": 3,
     "add_color": "D0FFD0",
     "remove_color": "FFD0D0",
-    "neutral_color": "F5F5F5"
+    "neutral_color": "F5F5F5",
+    "file_encoding": "utf-8"
 }

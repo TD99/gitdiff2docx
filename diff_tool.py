@@ -45,6 +45,8 @@ if not os.path.exists(config_file):
 with open(config_file, "r", encoding="utf-8") as f:
     config = json.load(f)
 
+file_encoding = config.get("file_encoding", "utf-8")
+
 # ------------------------------------------------------------------------------
 # Pygments style configuration
 
@@ -275,13 +277,13 @@ for file in changed_files:
     # Get file versions
     try:
         old_content = subprocess.run(
-            ["git", "show", f"{commit1}:{file}"], capture_output=True, text=True, encoding="utf-8"
+            ["git", "show", f"{commit1}:{file}"], capture_output=True, text=True, encoding=file_encoding
         ).stdout.splitlines()
     except:
         old_content = []
     try:
         new_content = subprocess.run(
-            ["git", "show", f"{commit2}:{file}"], capture_output=True, text=True, encoding="utf-8"
+            ["git", "show", f"{commit2}:{file}"], capture_output=True, text=True, encoding=file_encoding
         ).stdout.splitlines()
     except:
         new_content = []
