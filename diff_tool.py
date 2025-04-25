@@ -177,21 +177,14 @@ def extract_line_numbers(diff_lines):
     return line_numbers
 
 # Add a formatted and syntax-highlighted code diff table
-def add_diff_table(document, diff_lines, line_numbers, include_numbers, lexer):
-    table = document.add_table(rows=0, cols=2 if include_numbers else 1)
+def add_diff_table(document, diff_lines, line_numbers, lexer):
+    table = document.add_table(rows=0, cols=1)
     table.style = "Table Grid"
 
     for line, line_number in zip(diff_lines, line_numbers):
         row_cells = table.add_row().cells
 
-        # Line numbers column
-        if include_numbers:
-            num_cell = row_cells[0]
-            num_cell.text = str(line_number)
-            num_cell.paragraphs[0].runs[0].font.size = Pt(9)
-            code_cell = row_cells[1]
-        else:
-            code_cell = row_cells[0]
+        code_cell = row_cells[0]
 
         # Apply background shading
         if line.startswith("+"):
