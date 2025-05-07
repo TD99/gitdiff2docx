@@ -200,7 +200,7 @@ def add_legend_table(document):
     legend_data = [
         (lang["legend_add"], config.get("add_color", "D0FFD0"), config.get("add_symbol", "+")),
         (lang["legend_remove"], config.get("remove_color", "FFD0D0"), config.get("remove_symbol", "-")),
-        (lang["legend_neutral"], config.get("neutral_color", "F5F5F5"), config.get("neutral_symbol", " ")),
+        (lang["legend_neutral"], config.get("neutral_color", "F5F5F5"), config.get("neutral_symbol", "=")),
     ]
 
     for label, color, symbol in legend_data:
@@ -241,9 +241,11 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
 
     add_symbol = config.get("add_symbol", "+")
     remove_symbol = config.get("remove_symbol", "-")
-    neutral_symbol = config.get("neutral_symbol", " ")
+    neutral_symbol = config.get("neutral_symbol", "=")
 
-    for line, line_number in zip(diff_lines, line_numbers):
+    total_rows = len(diff_lines)
+
+    for idx, (line, line_number) in enumerate(zip(diff_lines, line_numbers)):
         row_cells = table.add_row().cells
         symbol_cell = row_cells[0]
         code_cell = row_cells[1]
@@ -264,9 +266,24 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
             shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), fill))
             cell._element.get_or_add_tcPr().append(shading)
 
+        # Determine which borders to remove
+        borders_to_remove_symbol = ["right"]
+        borders_to_remove_code = ["left"]
+
+        # For inner rows, remove top and bottom borders
+        if idx == 0:
+            borders_to_remove_symbol.append("bottom")
+            borders_to_remove_code.append("bottom")
+        elif idx == total_rows - 1:
+            borders_to_remove_symbol.append("top")
+            borders_to_remove_code.append("top")
+        else:
+            borders_to_remove_symbol.extend(["top", "bottom"])
+            borders_to_remove_code.extend(["top", "bottom"])
+
         # Hide the border
-        remove_cell_border(symbol_cell, borders=("right",))
-        remove_cell_border(code_cell, borders=("left",))
+        remove_cell_border(symbol_cell, borders=borders_to_remove_symbol)
+        remove_cell_border(code_cell, borders=borders_to_remove_code)
 
         # Set paragraph format for symbol cell
         symbol_paragraph = symbol_cell.paragraphs[0]
@@ -395,7 +412,7 @@ for index, file in enumerate(changed_files):
 
     add_symbol = config.get("add_symbol", "+")
     remove_symbol = config.get("remove_symbol", "-")
-    neutral_symbol = config.get("neutral_symbol", " ")
+    neutral_symbol = config.get("neutral_symbol", "=")
 
     old_idx = new_idx = 0
 
