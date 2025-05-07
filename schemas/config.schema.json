@@ -31,7 +31,7 @@
             "description": "Font size for diff content in the Word document",
             "minimum": 6,
             "maximum": 72,
-            "default": 12
+            "default": 8
         },
         "open_after_creation": {
             "type": "boolean",
@@ -76,7 +76,7 @@
         "neutral_symbol": {
             "type": "string",
             "description": "Symbol used to indicate unchanged lines in the diff",
-            "default": " "
+            "default": "="
         },
         "file_encoding": {
             "type": "string",
