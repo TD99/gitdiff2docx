@@ -312,6 +312,8 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
         # Lex and style each token
         for ttype, value in lex(code_content, lexer):
             value = value.rstrip('\n')
+            if not value:
+                value = "\u00A0" # Non-breaking space
 
             run = paragraph.add_run(value)
             run.font.name = config.get("diff_font", "Courier New")
