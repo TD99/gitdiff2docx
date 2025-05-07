@@ -11,6 +11,7 @@ from PIL import Image
 from difflib import SequenceMatcher
 
 from docx import Document
+from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.shared import Pt, RGBColor, Inches, Cm
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
@@ -206,9 +207,16 @@ def add_legend_table(document):
     for label, color, symbol in legend_data:
         column = legend_table.add_row().cells
         column[0].text = label
+
         shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), color))
         column[1]._element.get_or_add_tcPr().append(shading)
-        column[1].text = symbol
+        column[1].vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+        p = column[1].paragraphs[0]
+        run = p.add_run(symbol)
+        font = run.font
+        font.name = config.get("diff_font", "Courier New")
+        font.size = Pt(int(config.get("diff_font_size", 8)))
 
 doc.add_heading(lang["legend"], level=config.get("heading_level", 2))
 add_legend_table(doc)
@@ -290,7 +298,7 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
         symbol_paragraph.clear()
         run_sym = symbol_paragraph.add_run(symbol)
         run_sym.font.name = config.get("diff_font", "Courier New")
-        run_sym.font.size = Pt(int(config.get("diff_font_size", 12)))
+        run_sym.font.size = Pt(int(config.get("diff_font_size", 8)))
 
         # Clear and format code paragraph
         paragraph = code_cell.paragraphs[0]
@@ -307,7 +315,7 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
 
             run = paragraph.add_run(value)
             run.font.name = config.get("diff_font", "Courier New")
-            run.font.size = Pt(int(config.get("diff_font_size", 12)))
+            run.font.size = Pt(int(config.get("diff_font_size", 8)))
 
             style_str = token_styles.get(ttype)
             if style_str:
