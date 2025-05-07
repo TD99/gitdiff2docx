@@ -3,6 +3,7 @@
   "diffs": "Codeänderungen",
   "enter_commit1": "Geben Sie den ersten Commit-Hash ein (optional):",
   "enter_commit2": "Geben Sie den letzten Commit-Hash ein (optional):",
+  "error_inserting_image": "Das Bild '{image_name}' kann nicht dargestellt werden.",
   "enter_output_docx": "Geben Sie den Pfad der Ausgabedatei (.docx) ein (z.B. output.docx):",
   "enter_target_dir": "Geben Sie das Git-Zielverzeichnis ein:",
   "error_opening_file": "Fehler beim Öffnen der Datei {file}: {error}",

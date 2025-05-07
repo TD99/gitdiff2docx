@@ -3,6 +3,7 @@
   "diffs": "Code Changes",
   "enter_commit1": "Enter the first commit hash (optional):",
   "enter_commit2": "Enter the last commit hash (optional):",
+  "error_inserting_image": "The image '{image_name}' cannot be displayed.",
   "enter_output_docx": "Enter the output .docx file path (e.g., output.docx):",
   "enter_target_dir": "Enter the target Git directory:",
   "error_opening_file": "Error opening file {file}: {error}",

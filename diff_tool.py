@@ -102,7 +102,7 @@ if not os.path.exists(lang_dir):
 lang_choice = config.get("language", "en")
 lang_file = os.path.join(lang_dir, f"{lang_choice}.json")
 if not os.path.exists(lang_file):
-    print_red(f"Language '{lang_choice}' not found, defaulting to English.")
+    print_red(f"Language '{lang_choice}' not found, defaulting to English if available.")
     lang_file = os.path.join(lang_dir, "en.json")
 
 with open(lang_file, "r", encoding="utf-8") as f:
@@ -348,7 +348,7 @@ def add_image(document, file_bytes, image_name):
         document.add_picture(image_stream, width=Inches(width_inches))
         document.paragraphs[-1].alignment = 1  # center
     except Exception as e:
-        document.add_paragraph(f"[Error inserting image: {image_name}]")
+        document.add_paragraph(lang["error_inserting_image"].format(image_name=image_name))
 
 # ------------------------------------------------------------------------------
 # Main loop
