@@ -17,7 +17,6 @@ from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.shared import Pt, RGBColor, Inches, Cm
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
-from markdown_it.rules_block import paragraph
 
 from pygments import lex
 from pygments.lexers import guess_lexer_for_filename, guess_lexer
@@ -215,8 +214,13 @@ def add_legend_table(document):
     legend_data = [
         (lang["legend_add"], config.get("add_color", "D0FFD0"), config.get("add_symbol", "+")),
         (lang["legend_remove"], config.get("remove_color", "FFD0D0"), config.get("remove_symbol", "-")),
-        (lang["legend_neutral"], config.get("neutral_color", "F5F5F5"), config.get("neutral_symbol", "=")),
     ]
+
+    # Only include neutral/unchanged lines in the legend if they're being shown in the diff
+    if config.get("include_unchanged_lines", True):
+        legend_data.append(
+            (lang["legend_neutral"], config.get("neutral_color", "F5F5F5"), config.get("neutral_symbol", "="))
+        )
 
     for label, color, symbol in legend_data:
         column = legend_table.add_row().cells
@@ -264,6 +268,19 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
     add_symbol = config.get("add_symbol", "+")
     remove_symbol = config.get("remove_symbol", "-")
     neutral_symbol = config.get("neutral_symbol", "=")
+
+    # Skip unchanged lines if configured to do so
+    include_unchanged = config.get("include_unchanged_lines", True)
+    if not include_unchanged:
+        # Filter out unchanged lines while keeping their respective line numbers in sync
+        filtered_diff_lines = []
+        filtered_line_numbers = []
+        for line, line_num in zip(diff_lines, line_numbers):
+            if not line.startswith(" "):  # Skip lines that start with space (unchanged)
+                filtered_diff_lines.append(line)
+                filtered_line_numbers.append(line_num)
+        diff_lines = filtered_diff_lines
+        line_numbers = filtered_line_numbers
 
     total_rows = len(diff_lines)
 
@@ -444,11 +461,17 @@ for index, file in enumerate(changed_files):
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
-            for line in new_content[j1:j2]:
-                diff_lines.append(f" {line}")
-                line_nums.append(new_idx + 1)
-                new_idx += 1
-                old_idx += 1
+            # Only add unchanged lines if configured to do so
+            if config.get("include_unchanged_lines", True):
+                for line in new_content[j1:j2]:
+                    diff_lines.append(f" {line}")
+                    line_nums.append(new_idx + 1)
+                    new_idx += 1
+                    old_idx += 1
+            else:
+                # Still need to update indices even if we don't add the lines
+                new_idx += (j2 - j1)
+                old_idx += (i2 - i1)
         elif tag == "replace":
             for line in old_content[i1:i2]:
                 diff_lines.append(f"-{line}")
