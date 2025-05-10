@@ -15,6 +15,7 @@
     "file_encoding": "utf-8",
     "include_first_commit": true,
     "gdd_ignore_file_name": ".gddignore",
-    "include_unchanged_lines": true,
-    "include_images": true
+    "include_unchanged_lines": false,
+    "include_images": true,
+    "insert_page_breaks": true
 }

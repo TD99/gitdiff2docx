@@ -403,7 +403,7 @@ if os.path.exists(output_docx):
 verbose = config.get("verbose", False)
 
 for index, file in enumerate(changed_files):
-    if not index == 0:
+    if not index == 0 and config.get("insert_page_breaks", True):
         doc.add_page_break()
 
     doc.add_heading(f"{lang['file']}: {file}", level=config.get("heading_level", 2) + 1)
