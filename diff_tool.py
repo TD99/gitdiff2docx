@@ -132,7 +132,8 @@ while True:
     break
 
 # GDDIgnore
-gdd_ignore_path = os.path.join(target_dir, config.get("gdd_ignore_file_name", ".gddignore"))
+gdd_ignore_filename = config.get("gdd_ignore_file_name", ".gddignore")
+gdd_ignore_path = os.path.join(target_dir, gdd_ignore_filename)
 ignore_spec = None
 
 if os.path.exists(gdd_ignore_path):
@@ -189,6 +190,8 @@ changed_files = subprocess.run(
     ["git", "diff", "--name-only", commit1, commit2],
     capture_output=True, text=True, encoding="utf-8"
 ).stdout.splitlines()
+
+changed_files = [f for f in changed_files if f != gdd_ignore_filename]
 
 if ignore_spec:
     changed_files = [f for f in changed_files if not ignore_spec.match_file(f)]
