@@ -4,6 +4,8 @@ import subprocess
 import io
 import mimetypes
 
+import pathspec
+
 from datetime import datetime
 
 from PIL import Image
@@ -15,6 +17,7 @@ from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.shared import Pt, RGBColor, Inches, Cm
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
+from markdown_it.rules_block import paragraph
 
 from pygments import lex
 from pygments.lexers import guess_lexer_for_filename, guess_lexer
@@ -129,6 +132,14 @@ while True:
     os.chdir(target_dir)
     break
 
+# GDDIgnore
+gdd_ignore_path = os.path.join(target_dir, config.get("gdd_ignore_file_name", ".gddignore"))
+ignore_spec = None
+
+if os.path.exists(gdd_ignore_path):
+    with open(gdd_ignore_path, "r", encoding="utf-8") as f:
+        ignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", f)
+
 # FIRST COMMIT
 commit1 = input(lang["enter_commit1"] + " ").strip()
 commit1_specified = bool(commit1)
@@ -179,6 +190,9 @@ changed_files = subprocess.run(
     ["git", "diff", "--name-only", commit1, commit2],
     capture_output=True, text=True, encoding="utf-8"
 ).stdout.splitlines()
+
+if ignore_spec:
+    changed_files = [f for f in changed_files if not ignore_spec.match_file(f)]
 
 if not changed_files:
     print_yellow(lang["no_changes_found"].format(commit1=commit1, commit2=commit2))
@@ -399,10 +413,16 @@ for index, file in enumerate(changed_files):
         if is_image_file(file):
             # Insert only if the image changed
             if old_bytes != new_bytes:
-                doc.add_paragraph(lang['image_changed'], style="Italic")
-                add_image(doc, new_bytes, file)
+                paragraph = doc.add_paragraph()
+                run = paragraph.add_run(lang['image_changed'])
+                run.italic = True
+
+                if config.get("include_images", True):
+                    add_image(doc, new_bytes, file)
         else:
-            doc.add_paragraph(lang['binary_file_skipped'], style="Italic")
+            paragraph = doc.add_paragraph()
+            run = paragraph.add_run(lang['binary_file_skipped'])
+            run.italic = True
         continue
 
     # Fallback for text diff
@@ -419,10 +439,6 @@ for index, file in enumerate(changed_files):
     matcher = SequenceMatcher(None, old_content, new_content)
     diff_lines = []
     line_nums = []
-
-    add_symbol = config.get("add_symbol", "+")
-    remove_symbol = config.get("remove_symbol", "-")
-    neutral_symbol = config.get("neutral_symbol", "=")
 
     old_idx = new_idx = 0
 
@@ -453,7 +469,7 @@ for index, file in enumerate(changed_files):
                 line_nums.append(new_idx + 1)
                 new_idx += 1
 
-    # Falls etwas produziert wurde, Tabelle hinzufügen
+    # Add Table if there are significant changes
     if diff_lines:
         add_diff_table(doc, diff_lines, line_nums, lexer)
     else:
