@@ -7,6 +7,7 @@ A Python utility that converts git diffs into formatted Word documents. The tool
 - Customizable fonts and styling for diff content
 - Optional line number display
 - Color-coded changes (green for additions, red for deletions, gray for context)
+- Syntax highlighting
 - Support for multiple file changes in a single report
 - Configurable defaults via config.json
 - Ignore specific files or directories using .gddignore
