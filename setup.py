@@ -27,7 +27,6 @@ setup(
             "schemas/*.json",
         ],
     },
-    include_package_data=True,
     install_requires=requirements,
     entry_points={
         "console_scripts": [

@@ -1,7 +1,6 @@
 """Entry point for running gitdiff2docx as a module."""
 
 import sys
-import os
 
 # Import and run the main function from main.py
 if __name__ == "__main__":
