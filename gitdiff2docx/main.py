@@ -186,7 +186,7 @@ def main():
 
     output_docx = input(lang["enter_output_docx"] + " ").strip()
     if not output_docx:
-        output_docx = os.path.join(script_dir, "output.docx")
+        output_docx = os.path.join(os.getcwd(), "output.docx")
         print(lang["using_default_output"].format(output_docx=output_docx))
 
     # ------------------------------------------------------------------------------

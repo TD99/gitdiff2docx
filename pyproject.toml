@@ -43,7 +43,7 @@ Issues = "https://github.com/TD99/gitdiff2docx/issues"
 gdd = "gitdiff2docx.main:main"
 
 [tool.setuptools]
-packages = ["gitdiff2docx"]
+packages = ["gitdiff2docx", "gitdiff2docx.lang", "gitdiff2docx.schemas"]
 
 [tool.setuptools.package-data]
 gitdiff2docx = ["*.json", "lang/*.json", "schemas/*.json"]
