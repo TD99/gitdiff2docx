@@ -13,14 +13,43 @@ A Python utility that converts git diffs into formatted Word documents. The tool
 - Ignore specific files or directories using .gddignore
 
 ## Installation
-1. Clone the repository
-2. Install dependencies:
+
+### Option 1: Install from PyPI (when published)
+```bash
+pip install gitdiff2docx
+```
+
+### Option 2: Install from Source
+1. Clone the repository:
    ```bash
-   pip install -r requirements.txt
+   git clone https://github.com/TD99/gitdiff2docx.git
+   cd gitdiff2docx
    ```
 
+2. Install the package:
+   ```bash
+   pip install .
+   ```
+
+   Or for development mode:
+   ```bash
+   pip install -e .
+   ```
+
+Once installed, you can use the `gdd` command from anywhere in your terminal.
+
 ## Usage
-Run the script and follow the interactive prompts:
+Run the tool using the `gdd` command and follow the interactive prompts:
+```bash
+gdd
+```
+
+Alternatively, you can still run it as a Python module:
+```bash
+python -m gitdiff2docx
+```
+
+Or if running from source without installation:
 ```bash
 python diff_tool.py
 ```
@@ -49,7 +78,11 @@ The generated DOCX includes:
 - Syntax highlighting
 
 ## Configuration
-GitDiff2Docx can be customized using a `config.json` file placed in the same directory as `diff_tool.py`.
+GitDiff2Docx can be customized using a `config.json` file. When installed via pip, you can create this file in your home directory or current working directory. The tool will look for configuration in the following order:
+1. `config.json` in the current directory
+2. Default configuration from the package installation
+
+When running from source, place `config.json` in the same directory as `diff_tool.py`.
 
 ## Localization
 - The default interface and output language is German (`de`).

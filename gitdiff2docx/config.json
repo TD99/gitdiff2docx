@@ -1,0 +1,21 @@
+{
+    "$schema": "./schemas/config.schema.json",
+    "language": "de",
+    "verbose": true,
+    "diff_font": "Courier New",
+    "diff_font_size": 8,
+    "open_after_creation": true,
+    "heading_level": 3,
+    "add_color": "D0FFD0",
+    "remove_color": "FFD0D0",
+    "neutral_color": "F5F5F5",
+    "add_symbol": "+",
+    "remove_symbol": "-",
+    "neutral_symbol": "=",
+    "file_encoding": "utf-8",
+    "include_first_commit": true,
+    "gdd_ignore_file_name": ".gddignore",
+    "include_unchanged_lines": false,
+    "include_images": true,
+    "insert_page_breaks": true
+}

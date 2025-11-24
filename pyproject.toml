@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gitdiff2docx"
+version = "1.0.0"
+description = "A Python utility that converts git diffs into formatted Word documents"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+authors = [
+    {name = "TD99"}
+]
+keywords = ["git", "diff", "docx", "word", "document", "converter"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Version Control :: Git",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "python-docx",
+    "pygments",
+    "pillow",
+    "pathspec",
+]
+
+[project.urls]
+Homepage = "https://github.com/TD99/gitdiff2docx"
+Repository = "https://github.com/TD99/gitdiff2docx"
+Issues = "https://github.com/TD99/gitdiff2docx/issues"
+
+[project.scripts]
+gdd = "gitdiff2docx.main:main"
+
+[tool.setuptools]
+packages = ["gitdiff2docx"]
+
+[tool.setuptools.package-data]
+gitdiff2docx = ["*.json", "lang/*.json", "schemas/*.json"]
