@@ -174,3 +174,7 @@ cython_debug/
 *.docx
 *.dist
 *.exe
+
+# Go binaries and build artifacts
+/gitdiff2docx
+/diff_tool
