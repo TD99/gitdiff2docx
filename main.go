@@ -688,7 +688,10 @@ func main() {
 
 	if !strings.HasSuffix(commit1, "^") && !strings.Contains(commit1, "~") && commit1 != "HEAD" {
 		if isVeryFirst && cfg.IncludeFirstCommit {
-			commit1 = "4b825dc642cb6eb9a060e54bf8d69288fbee4904" // empty tree
+			// Git's canonical empty tree SHA-1 represents the state before any
+			// commit exists, allowing a diff that shows all lines in the first
+			// commit as additions.
+			commit1 = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 		} else if cfg.IncludeFirstCommit {
 			commit1 = commit1 + "^"
 		}
