@@ -1,0 +1,80 @@
+{
+    "style": "modern",
+    "symbol_column_width_cm": 0.8,
+    "row_border_behavior": "preserve",
+    "use_pygments_colors": true,
+    "table_cell_margins_dxa": {
+        "top": 48,
+        "left": 82,
+        "bottom": 48,
+        "right": 82
+    },
+    "table_borders": {
+        "default": {
+            "visible": false,
+            "style": "single",
+            "weight_pt": 0.5,
+            "color": "B9BEC7",
+            "space": 0
+        },
+        "top": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.75,
+            "color": "AEB5BF"
+        },
+        "left": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.75,
+            "color": "AEB5BF"
+        },
+        "bottom": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.75,
+            "color": "AEB5BF"
+        },
+        "right": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.75,
+            "color": "AEB5BF"
+        },
+        "inside_h": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.5,
+            "color": "C6CBD3"
+        },
+        "inside_v": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.5,
+            "color": "C6CBD3"
+        }
+    },
+    "colors": {
+        "add_fill": "E3EEE8",
+        "remove_fill": "F5E7E8",
+        "neutral_fill": "E9ECEF",
+        "add_symbol": "1F6B4C",
+        "remove_symbol": "8F2D3A",
+        "neutral_symbol": "424B57",
+        "default_code": "1E232B"
+    },
+    "symbols": {
+        "add": "+",
+        "remove": "-",
+        "neutral": "="
+    },
+    "font": {
+        "name": "Consolas",
+        "size": 9,
+        "prefer_consolas_when_default_courier_new": false,
+        "min_size": 0,
+        "bold_symbols": true,
+        "center_symbols": true,
+        "line_spacing": 1.03
+    }
+}

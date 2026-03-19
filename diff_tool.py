@@ -14,9 +14,10 @@ from difflib import SequenceMatcher
 
 from docx import Document
 from docx.enum.table import WD_ALIGN_VERTICAL
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor, Inches, Cm
-from docx.oxml import parse_xml
-from docx.oxml.ns import nsdecls
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import nsdecls, qn
 
 from pygments import lex
 from pygments.lexers import guess_lexer_for_filename, guess_lexer
@@ -43,6 +44,28 @@ def print_yellow(text: str):
 def print_red(text: str):
     print(f"\033[91m{text}\033[0m")
 
+def rgb_from_hex(hex_color, fallback=(0, 0, 0)):
+    try:
+        cleaned = hex_color.lstrip("#")
+        return RGBColor(
+            int(cleaned[0:2], 16),
+            int(cleaned[2:4], 16),
+            int(cleaned[4:6], 16),
+        )
+    except Exception:
+        return RGBColor(*fallback)
+
+def normalize_hex_color(hex_color, fallback="auto"):
+    if isinstance(hex_color, str):
+        cleaned = hex_color.strip().lstrip("#")
+        if len(cleaned) == 6:
+            try:
+                int(cleaned, 16)
+                return cleaned.upper()
+            except ValueError:
+                pass
+    return fallback
+
 def is_binary_string(bytes_data):
     textchars = bytearray({7, 8, 9, 10, 12, 13, 27}
                           | set(range(0x20, 0x100)) - {0x7f})
@@ -60,15 +83,195 @@ def get_usable_width(document):
     return page_width - left_margin - right_margin  # in EMUs
 
 def remove_cell_border(cell, borders=("top", "left", "bottom", "right")):
+    border_spec = {border: {"val": "nil"} for border in borders}
+    set_cell_borders(cell, border_spec)
+
+def set_cell_borders(cell, border_spec):
     tc = cell._tc
     tcPr = tc.get_or_add_tcPr()
-    tcBorders = parse_xml(r'<w:tcBorders {}/>'.format(nsdecls('w')))
-    for border in borders:
-        border_element = parse_xml(
-            f'<w:{border} w:val="nil" {nsdecls("w")}/>'
-        )
+    existing = tcPr.find(qn("w:tcBorders"))
+    if existing is not None:
+        tcPr.remove(existing)
+
+    tcBorders = OxmlElement("w:tcBorders")
+    for border, attrs in border_spec.items():
+        border_element = OxmlElement(f"w:{border}")
+        for key, value in attrs.items():
+            border_element.set(qn(f"w:{key}"), str(value))
         tcBorders.append(border_element)
     tcPr.append(tcBorders)
+
+def set_table_borders(table, border_spec):
+    tblPr = table._tbl.tblPr
+    existing = tblPr.find(qn("w:tblBorders"))
+    if existing is not None:
+        tblPr.remove(existing)
+
+    tblBorders = OxmlElement("w:tblBorders")
+    for border, attrs in border_spec.items():
+        border_element = OxmlElement(f"w:{border}")
+        for key, value in attrs.items():
+            border_element.set(qn(f"w:{key}"), str(value))
+        tblBorders.append(border_element)
+    tblPr.append(tblBorders)
+
+def set_table_cell_margins(table, top=40, left=80, bottom=40, right=80):
+    tblPr = table._tbl.tblPr
+    existing = tblPr.find(qn("w:tblCellMar"))
+    if existing is not None:
+        tblPr.remove(existing)
+
+    tblCellMar = OxmlElement("w:tblCellMar")
+    for side, value in (("top", top), ("left", left), ("bottom", bottom), ("right", right)):
+        side_element = OxmlElement(f"w:{side}")
+        side_element.set(qn("w:w"), str(value))
+        side_element.set(qn("w:type"), "dxa")
+        tblCellMar.append(side_element)
+    tblPr.append(tblCellMar)
+
+def deep_merge_dict(base, override):
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = deep_merge_dict(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+def resolve_config_path(path_value, base_dir):
+    cleaned = str(path_value).strip()
+    if not cleaned:
+        return base_dir
+    expanded = os.path.expanduser(cleaned)
+    if os.path.isabs(expanded):
+        return expanded
+    return os.path.join(base_dir, expanded)
+
+def is_same_path(path_a, path_b):
+    return os.path.normcase(os.path.abspath(path_a)) == os.path.normcase(os.path.abspath(path_b))
+
+def get_theme_font(theme, config):
+    theme_font = theme.get("font", {})
+
+    font_name = theme_font.get("name") or config.get("diff_font", "Courier New")
+    if theme_font.get("prefer_consolas_when_default_courier_new", False) and font_name == "Courier New":
+        font_name = "Consolas"
+
+    theme_size = theme_font.get("size")
+    if theme_size is None:
+        resolved_size = int(config.get("diff_font_size", 8))
+    else:
+        resolved_size = int(theme_size)
+    resolved_size = max(resolved_size, int(theme_font.get("min_size", 0)))
+
+    return font_name, resolved_size
+
+def build_border_attrs(side_config, default_config):
+    cfg = deep_merge_dict(default_config, side_config if isinstance(side_config, dict) else {})
+    visible = bool(cfg.get("visible", False))
+    if not visible:
+        return {"val": "nil"}
+
+    style = str(cfg.get("style", "single")).strip() or "single"
+    weight_pt = float(cfg.get("weight_pt", 0.5))
+    sz = int(round(weight_pt * 8))
+    sz = max(2, min(96, sz))
+    color = normalize_hex_color(cfg.get("color", "auto"), fallback="auto")
+    space = max(0, int(cfg.get("space", 0)))
+
+    return {
+        "val": style,
+        "sz": sz,
+        "space": space,
+        "color": color,
+    }
+
+def build_table_border_spec(theme):
+    table_borders_cfg = theme.get("table_borders", {})
+    default_side = table_borders_cfg.get(
+        "default",
+        {"visible": False, "style": "single", "weight_pt": 0.5, "color": "auto", "space": 0},
+    )
+
+    return {
+        "top": build_border_attrs(table_borders_cfg.get("top", {}), default_side),
+        "left": build_border_attrs(table_borders_cfg.get("left", {}), default_side),
+        "bottom": build_border_attrs(table_borders_cfg.get("bottom", {}), default_side),
+        "right": build_border_attrs(table_borders_cfg.get("right", {}), default_side),
+        "insideH": build_border_attrs(table_borders_cfg.get("inside_h", {}), default_side),
+        "insideV": build_border_attrs(table_borders_cfg.get("inside_v", {}), default_side),
+    }
+
+def list_available_themes(themes_dir, excluded_filenames=None):
+    if not os.path.isdir(themes_dir):
+        return []
+    excluded = {name.lower() for name in (excluded_filenames or [])}
+    return sorted(
+        os.path.splitext(filename)[0]
+        for filename in os.listdir(themes_dir)
+        if filename.lower().endswith(".json") and filename.lower() not in excluded
+    )
+
+def load_theme_overrides(overrides_file_path):
+    if not overrides_file_path or not os.path.exists(overrides_file_path):
+        return {}
+
+    try:
+        with open(overrides_file_path, "r", encoding="utf-8") as f:
+            overrides_data = json.load(f)
+    except Exception as e:
+        print_red(f"Error: Failed to read theme override file '{overrides_file_path}': {e}")
+        exit()
+
+    if not isinstance(overrides_data, dict):
+        print_red(f"Error: Theme override file '{overrides_file_path}' must contain a JSON object.")
+        exit()
+
+    return overrides_data
+
+def load_theme(theme_name, themes_dir, overrides_data=None, excluded_filenames=None):
+    available_themes = list_available_themes(themes_dir, excluded_filenames=excluded_filenames)
+    if not available_themes:
+        print_red(f"Error: No theme files found in '{themes_dir}'.")
+        exit()
+
+    theme_path = os.path.join(themes_dir, f"{theme_name}.json")
+    if not os.path.exists(theme_path):
+        print_red(
+            f"Error: Theme '{theme_name}' not found in '{themes_dir}'. Available themes: {', '.join(available_themes)}"
+        )
+        exit()
+
+    try:
+        with open(theme_path, "r", encoding="utf-8") as f:
+            theme_data = json.load(f)
+    except Exception as e:
+        print_red(f"Error: Failed to read theme file '{theme_path}': {e}")
+        exit()
+
+    if not isinstance(theme_data, dict):
+        print_red(f"Error: Theme file '{theme_path}' must contain a JSON object.")
+        exit()
+
+    merged_theme = dict(theme_data)
+    if overrides_data:
+        merged_theme = deep_merge_dict(merged_theme, overrides_data)
+
+    merged_theme["name"] = theme_name
+    return merged_theme
+
+def apply_table_theme_style(table, theme):
+    table.autofit = False
+
+    margins = theme.get("table_cell_margins_dxa", {})
+    set_table_cell_margins(
+        table,
+        top=int(margins.get("top", 40)),
+        left=int(margins.get("left", 80)),
+        bottom=int(margins.get("bottom", 40)),
+        right=int(margins.get("right", 80)),
+    )
+    set_table_borders(table, build_table_border_spec(theme))
 
 # ------------------------------------------------------------------------------
 # Configuration
@@ -82,6 +285,26 @@ with open(config_file, "r", encoding="utf-8") as f:
     config = json.load(f)
 
 file_encoding = config.get("file_encoding", "utf-8")
+themes_dir = os.path.join(script_dir, "themes")
+theme_overrides_dir_cfg = config.get("theme_overrides_path", themes_dir)
+theme_overrides_dir = resolve_config_path(theme_overrides_dir_cfg, script_dir)
+theme_overrides_file = str(config.get("theme_overrides_file", "_overrides.json")).strip()
+theme_overrides_path = (
+    os.path.join(theme_overrides_dir, theme_overrides_file) if theme_overrides_file else None
+)
+theme_overrides = load_theme_overrides(theme_overrides_path)
+excluded_theme_files = []
+if theme_overrides_path and is_same_path(os.path.dirname(theme_overrides_path), themes_dir):
+    excluded_theme_files.append(os.path.basename(theme_overrides_path))
+theme_name = str(config.get("theme", "old")).strip() or "old"
+theme = load_theme(
+    theme_name,
+    themes_dir,
+    overrides_data=theme_overrides,
+    excluded_filenames=excluded_theme_files,
+)
+theme_style = str(theme.get("style", "legacy")).lower()
+is_modern_theme = theme_style == "modern"
 
 # ------------------------------------------------------------------------------
 # Pygments style configuration
@@ -114,6 +337,7 @@ with open(lang_file, "r", encoding="utf-8") as f:
 # Show banner
 
 print_green(lang["title"])
+print_yellow(f"Using theme: {theme_name}")
 
 # ------------------------------------------------------------------------------
 # Input prompts
@@ -213,16 +437,32 @@ doc.add_paragraph(lang["report_generated_on"].format(
 def add_legend_table(document):
     legend_table = document.add_table(rows=0, cols=2)
     legend_table.style = "Table Grid"
+    apply_table_theme_style(legend_table, theme)
+
+    theme_colors = theme.get("colors", {})
+    theme_symbols = theme.get("symbols", {})
+    theme_font = theme.get("font", {})
+
+    legend_add_color = theme_colors.get("add_fill", "D0FFD0")
+    legend_remove_color = theme_colors.get("remove_fill", "FFD0D0")
+    legend_neutral_color = theme_colors.get("neutral_fill", "F5F5F5")
+
+    legend_add_symbol = theme_symbols.get("add", "+")
+    legend_remove_symbol = theme_symbols.get("remove", "-")
+    legend_neutral_symbol = theme_symbols.get("neutral", "=")
+
+    diff_font_name, diff_font_size = get_theme_font(theme, config)
+    bold_symbols = bool(theme_font.get("bold_symbols", False))
 
     legend_data = [
-        (lang["legend_add"], config.get("add_color", "D0FFD0"), config.get("add_symbol", "+")),
-        (lang["legend_remove"], config.get("remove_color", "FFD0D0"), config.get("remove_symbol", "-")),
+        (lang["legend_add"], legend_add_color, legend_add_symbol),
+        (lang["legend_remove"], legend_remove_color, legend_remove_symbol),
     ]
 
     # Only include neutral/unchanged lines in the legend if they're being shown in the diff
     if config.get("include_unchanged_lines", True):
         legend_data.append(
-            (lang["legend_neutral"], config.get("neutral_color", "F5F5F5"), config.get("neutral_symbol", "="))
+            (lang["legend_neutral"], legend_neutral_color, legend_neutral_symbol)
         )
 
     for label, color, symbol in legend_data:
@@ -236,8 +476,16 @@ def add_legend_table(document):
         p = column[1].paragraphs[0]
         run = p.add_run(symbol)
         font = run.font
-        font.name = config.get("diff_font", "Courier New")
-        font.size = Pt(int(config.get("diff_font_size", 8)))
+        font.name = diff_font_name
+        font.size = Pt(diff_font_size)
+        if bold_symbols:
+            run.bold = True
+        if symbol == legend_add_symbol:
+            run.font.color.rgb = rgb_from_hex(theme_colors.get("add_symbol", "000000"))
+        elif symbol == legend_remove_symbol:
+            run.font.color.rgb = rgb_from_hex(theme_colors.get("remove_symbol", "000000"))
+        else:
+            run.font.color.rgb = rgb_from_hex(theme_colors.get("neutral_symbol", "000000"))
 
 doc.add_heading(lang["legend"], level=config.get("heading_level", 2))
 add_legend_table(doc)
@@ -264,22 +512,38 @@ def extract_line_numbers(diff_lines):
 def add_diff_table(document, diff_lines, line_numbers, lexer):
     table = document.add_table(rows=0, cols=2)
     table.style = "Table Grid"
+    apply_table_theme_style(table, theme)
 
-    table.columns[0].width = Cm(0.57)
-    table.columns[1].width = get_usable_width(document) - Cm(0.57)
+    theme_colors = theme.get("colors", {})
+    theme_symbols = theme.get("symbols", {})
+    theme_font = theme.get("font", {})
 
-    add_symbol = config.get("add_symbol", "+")
-    remove_symbol = config.get("remove_symbol", "-")
-    neutral_symbol = config.get("neutral_symbol", "=")
+    symbol_col_width = Cm(float(theme.get("symbol_column_width_cm", 0.57)))
+    table.columns[0].width = symbol_col_width
+    table.columns[1].width = get_usable_width(document) - symbol_col_width
+
+    diff_font_name, diff_font_size = get_theme_font(theme, config)
+    diff_font_size_pt = Pt(diff_font_size)
+
+    add_symbol = theme_symbols.get("add", "+")
+    remove_symbol = theme_symbols.get("remove", "-")
+    neutral_symbol = theme_symbols.get("neutral", "=")
+
+    bold_symbols = bool(theme_font.get("bold_symbols", False))
+    center_symbols = bool(theme_font.get("center_symbols", False))
+    line_spacing = float(theme_font.get("line_spacing", 1.0))
+    row_border_behavior = str(
+        theme.get("row_border_behavior", "none" if is_modern_theme else "merge")
+    ).strip().lower()
+    use_pygments_colors = bool(theme.get("use_pygments_colors", True))
 
     # Skip unchanged lines if configured to do so
     include_unchanged = config.get("include_unchanged_lines", True)
     if not include_unchanged:
-        # Filter out unchanged lines while keeping their respective line numbers in sync
         filtered_diff_lines = []
         filtered_line_numbers = []
         for line, line_num in zip(diff_lines, line_numbers):
-            if not line.startswith(" "):  # Skip lines that start with space (unchanged)
+            if not line.startswith(" "):
                 filtered_diff_lines.append(line)
                 filtered_line_numbers.append(line_num)
         diff_lines = filtered_diff_lines
@@ -287,73 +551,83 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
 
     total_rows = len(diff_lines)
 
-    for idx, (line, line_number) in enumerate(zip(diff_lines, line_numbers)):
+    for idx, line in enumerate(diff_lines):
         row_cells = table.add_row().cells
         symbol_cell = row_cells[0]
         code_cell = row_cells[1]
 
-        # Apply background shading
         if line.startswith("+"):
-            fill = config.get("add_color", "D0FFD0")
+            fill = theme_colors.get("add_fill", "D0FFD0")
+            symbol_color = theme_colors.get("add_symbol", "000000")
             symbol = add_symbol
         elif line.startswith("-"):
-            fill = config.get("remove_color", "FFD0D0")
+            fill = theme_colors.get("remove_fill", "FFD0D0")
+            symbol_color = theme_colors.get("remove_symbol", "000000")
             symbol = remove_symbol
         else:
-            fill = config.get("neutral_color", "F5F5F5")
+            fill = theme_colors.get("neutral_fill", "F5F5F5")
+            symbol_color = theme_colors.get("neutral_symbol", "000000")
             symbol = neutral_symbol
 
-        # Background color for both cells
         for cell in (symbol_cell, code_cell):
             shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), fill))
             cell._element.get_or_add_tcPr().append(shading)
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
-        # Determine which borders to remove
-        borders_to_remove_symbol = ["right"]
-        borders_to_remove_code = ["left"]
+        if row_border_behavior == "none":
+            remove_cell_border(symbol_cell)
+            remove_cell_border(code_cell)
+        elif row_border_behavior == "merge":
+            borders_to_remove_symbol = ["right"]
+            borders_to_remove_code = ["left"]
 
-        # For inner rows, remove top and bottom borders
-        if idx == 0:
-            borders_to_remove_symbol.append("bottom")
-            borders_to_remove_code.append("bottom")
-        elif idx == total_rows - 1:
-            borders_to_remove_symbol.append("top")
-            borders_to_remove_code.append("top")
+            if idx == 0:
+                borders_to_remove_symbol.append("bottom")
+                borders_to_remove_code.append("bottom")
+            elif idx == total_rows - 1:
+                borders_to_remove_symbol.append("top")
+                borders_to_remove_code.append("top")
+            else:
+                borders_to_remove_symbol.extend(["top", "bottom"])
+                borders_to_remove_code.extend(["top", "bottom"])
+
+            remove_cell_border(symbol_cell, borders=borders_to_remove_symbol)
+            remove_cell_border(code_cell, borders=borders_to_remove_code)
         else:
-            borders_to_remove_symbol.extend(["top", "bottom"])
-            borders_to_remove_code.extend(["top", "bottom"])
+            # preserve cell borders from table/theme configuration
+            pass
 
-        # Hide the border
-        remove_cell_border(symbol_cell, borders=borders_to_remove_symbol)
-        remove_cell_border(code_cell, borders=borders_to_remove_code)
-
-        # Set paragraph format for symbol cell
         symbol_paragraph = symbol_cell.paragraphs[0]
         symbol_paragraph.clear()
+        symbol_paragraph.paragraph_format.space_before = Pt(0)
+        symbol_paragraph.paragraph_format.space_after = Pt(0)
+        if center_symbols:
+            symbol_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run_sym = symbol_paragraph.add_run(symbol)
-        run_sym.font.name = config.get("diff_font", "Courier New")
-        run_sym.font.size = Pt(int(config.get("diff_font_size", 8)))
+        run_sym.font.name = diff_font_name
+        run_sym.font.size = diff_font_size_pt
+        run_sym.bold = bold_symbols
+        run_sym.font.color.rgb = rgb_from_hex(symbol_color)
 
-        # Clear and format code paragraph
         paragraph = code_cell.paragraphs[0]
-        paragraph.clear()  # remove any auto-inserted text
+        paragraph.clear()
         paragraph.paragraph_format.space_before = Pt(0)
         paragraph.paragraph_format.space_after = Pt(0)
+        if line_spacing > 0:
+            paragraph.paragraph_format.line_spacing = line_spacing
 
-        # Strip symbol from content
         code_content = line[1:]
 
-        # Lex and style each token
         for ttype, value in lex(code_content, lexer):
             value = value.rstrip('\n')
             if not value:
-                value = "\u00A0" # Non-breaking space
+                value = "\u00A0"
 
             run = paragraph.add_run(value)
-            run.font.name = config.get("diff_font", "Courier New")
-            run.font.size = Pt(int(config.get("diff_font_size", 8)))
+            run.font.name = diff_font_name
+            run.font.size = diff_font_size_pt
 
-            style_str = token_styles.get(ttype)
+            style_str = token_styles.get(ttype) if use_pygments_colors else None
             if style_str:
                 for part in style_str.split():
                     if part == "bold":
@@ -369,6 +643,8 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
                             run.font.color.rgb = RGBColor(r, g, b)
                         except ValueError:
                             pass
+            else:
+                run.font.color.rgb = rgb_from_hex(theme_colors.get("default_code", "000000"))
 
 # Add images to the document
 def add_image(document, file_bytes, image_name):

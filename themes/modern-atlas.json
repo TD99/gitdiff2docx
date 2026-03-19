@@ -1,0 +1,50 @@
+{
+    "style": "modern",
+    "symbol_column_width_cm": 0.86,
+    "row_border_behavior": "none",
+    "use_pygments_colors": true,
+    "table_cell_margins_dxa": {
+        "top": 60,
+        "left": 95,
+        "bottom": 60,
+        "right": 95
+    },
+    "table_borders": {
+        "default": {
+            "visible": false,
+            "style": "single",
+            "weight_pt": 0.5,
+            "color": "B9C8DE",
+            "space": 0
+        },
+        "top": {},
+        "left": {},
+        "bottom": {},
+        "right": {},
+        "inside_h": {},
+        "inside_v": {}
+    },
+    "colors": {
+        "add_fill": "E7F6F3",
+        "remove_fill": "FDECEE",
+        "neutral_fill": "EDF3FA",
+        "add_symbol": "0E7C86",
+        "remove_symbol": "B54755",
+        "neutral_symbol": "4D6280",
+        "default_code": "1F3552"
+    },
+    "symbols": {
+        "add": "+",
+        "remove": "-",
+        "neutral": "="
+    },
+    "font": {
+        "name": "Consolas",
+        "size": 9,
+        "prefer_consolas_when_default_courier_new": false,
+        "min_size": 0,
+        "bold_symbols": true,
+        "center_symbols": true,
+        "line_spacing": 1.12
+    }
+}

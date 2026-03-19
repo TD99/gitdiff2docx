@@ -1,0 +1,80 @@
+{
+    "style": "modern",
+    "symbol_column_width_cm": 0.86,
+    "row_border_behavior": "preserve",
+    "use_pygments_colors": false,
+    "table_cell_margins_dxa": {
+        "top": 58,
+        "left": 94,
+        "bottom": 58,
+        "right": 94
+    },
+    "table_borders": {
+        "default": {
+            "visible": false,
+            "style": "single",
+            "weight_pt": 0.5,
+            "color": "4A5160",
+            "space": 0
+        },
+        "top": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.75,
+            "color": "5B6374"
+        },
+        "left": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.75,
+            "color": "5B6374"
+        },
+        "bottom": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.75,
+            "color": "5B6374"
+        },
+        "right": {
+            "visible": true,
+            "style": "single",
+            "weight_pt": 0.75,
+            "color": "5B6374"
+        },
+        "inside_h": {
+            "visible": false,
+            "style": "single",
+            "weight_pt": 0.5,
+            "color": "4A5160"
+        },
+        "inside_v": {
+            "visible": false,
+            "style": "single",
+            "weight_pt": 0.5,
+            "color": "4A5160"
+        }
+    },
+    "colors": {
+        "add_fill": "233228",
+        "remove_fill": "3A2528",
+        "neutral_fill": "2A2F39",
+        "add_symbol": "84D2A9",
+        "remove_symbol": "F4A3AE",
+        "neutral_symbol": "AAB6CC",
+        "default_code": "E6EBF5"
+    },
+    "symbols": {
+        "add": "+",
+        "remove": "-",
+        "neutral": "="
+    },
+    "font": {
+        "name": "Consolas",
+        "size": 9,
+        "prefer_consolas_when_default_courier_new": false,
+        "min_size": 0,
+        "bold_symbols": true,
+        "center_symbols": true,
+        "line_spacing": 1.1
+    }
+}
