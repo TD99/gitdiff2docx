@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "theme.overrides.schema.json",
+    "title": "GitDiff2Docx Theme Overrides",
+    "description": "Schema for themes/_overrides.json. All theme fields are optional, but validated when present.",
+    "allOf": [
+        {
+            "$ref": "./theme.common.schema.json#/definitions/themeObject"
+        }
+    ]
+}

@@ -1,0 +1,207 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "theme.common.schema.json",
+    "title": "GitDiff2Docx Theme Common",
+    "description": "Shared schema definitions for full themes and theme overrides.",
+    "definitions": {
+        "hexColor": {
+            "type": "string",
+            "pattern": "^#?[0-9A-Fa-f]{6}$"
+        },
+        "borderColor": {
+            "type": "string",
+            "pattern": "^(auto|#?[0-9A-Fa-f]{6})$"
+        },
+        "borderConfig": {
+            "type": "object",
+            "description": "Border settings for one table side. Empty object means hidden unless inherited and visible=true.",
+            "properties": {
+                "visible": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "style": {
+                    "type": "string",
+                    "minLength": 1,
+                    "default": "single"
+                },
+                "weight_pt": {
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 0.5
+                },
+                "color": {
+                    "$ref": "#/definitions/borderColor"
+                },
+                "space": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                }
+            },
+            "additionalProperties": false
+        },
+        "tableCellMargins": {
+            "type": "object",
+            "properties": {
+                "top": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 40
+                },
+                "left": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 80
+                },
+                "bottom": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 40
+                },
+                "right": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 80
+                }
+            },
+            "additionalProperties": false
+        },
+        "tableBorders": {
+            "type": "object",
+            "properties": {
+                "default": {
+                    "$ref": "#/definitions/borderConfig"
+                },
+                "top": {
+                    "$ref": "#/definitions/borderConfig"
+                },
+                "left": {
+                    "$ref": "#/definitions/borderConfig"
+                },
+                "bottom": {
+                    "$ref": "#/definitions/borderConfig"
+                },
+                "right": {
+                    "$ref": "#/definitions/borderConfig"
+                },
+                "inside_h": {
+                    "$ref": "#/definitions/borderConfig"
+                },
+                "inside_v": {
+                    "$ref": "#/definitions/borderConfig"
+                }
+            },
+            "additionalProperties": false
+        },
+        "colors": {
+            "type": "object",
+            "properties": {
+                "add_fill": {
+                    "$ref": "#/definitions/hexColor"
+                },
+                "remove_fill": {
+                    "$ref": "#/definitions/hexColor"
+                },
+                "neutral_fill": {
+                    "$ref": "#/definitions/hexColor"
+                },
+                "add_symbol": {
+                    "$ref": "#/definitions/hexColor"
+                },
+                "remove_symbol": {
+                    "$ref": "#/definitions/hexColor"
+                },
+                "neutral_symbol": {
+                    "$ref": "#/definitions/hexColor"
+                },
+                "default_code": {
+                    "$ref": "#/definitions/hexColor"
+                }
+            },
+            "additionalProperties": false
+        },
+        "symbols": {
+            "type": "object",
+            "properties": {
+                "add": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "remove": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "neutral": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "additionalProperties": false
+        },
+        "font": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "size": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "min_size": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "bold_symbols": {
+                    "type": "boolean"
+                },
+                "center_symbols": {
+                    "type": "boolean"
+                },
+                "line_spacing": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                }
+            },
+            "additionalProperties": false
+        },
+        "themeObject": {
+            "type": "object",
+            "properties": {
+                "$schema": {
+                    "type": "string",
+                    "description": "Optional JSON Schema reference for editor validation support."
+                },
+                "symbol_column_width_cm": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Width of the symbol column in centimeters.",
+                    "default": 0.57
+                },
+                "use_syntax_highlighting": {
+                    "type": "boolean",
+                    "description": "Enable token-based syntax highlighting (Pygments).",
+                    "default": true
+                },
+                "table_cell_margins": {
+                    "$ref": "#/definitions/tableCellMargins"
+                },
+                "table_borders": {
+                    "$ref": "#/definitions/tableBorders"
+                },
+                "colors": {
+                    "$ref": "#/definitions/colors"
+                },
+                "symbols": {
+                    "$ref": "#/definitions/symbols"
+                },
+                "font": {
+                    "$ref": "#/definitions/font"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}
