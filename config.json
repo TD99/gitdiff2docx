@@ -2,7 +2,7 @@
     "$schema": "./schemas/config.schema.json",
     "language": "de",
     "verbose": true,
-    "theme": "modern-dark",
+    "theme": "classic",
     "diff_font": "Courier New",
     "diff_font_size": 8,
     "open_after_creation": true,

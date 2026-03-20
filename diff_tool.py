@@ -82,52 +82,33 @@ def get_usable_width(document):
     right_margin = section.right_margin
     return page_width - left_margin - right_margin  # in EMUs
 
-def remove_cell_border(cell, borders=("top", "left", "bottom", "right")):
-    border_spec = {border: {"val": "nil"} for border in borders}
-    set_cell_borders(cell, border_spec)
-
-def set_cell_borders(cell, border_spec):
-    tc = cell._tc
-    tcPr = tc.get_or_add_tcPr()
-    existing = tcPr.find(qn("w:tcBorders"))
-    if existing is not None:
-        tcPr.remove(existing)
-
-    tcBorders = OxmlElement("w:tcBorders")
-    for border, attrs in border_spec.items():
-        border_element = OxmlElement(f"w:{border}")
-        for key, value in attrs.items():
-            border_element.set(qn(f"w:{key}"), str(value))
-        tcBorders.append(border_element)
-    tcPr.append(tcBorders)
-
 def set_table_borders(table, border_spec):
-    tblPr = table._tbl.tblPr
-    existing = tblPr.find(qn("w:tblBorders"))
+    tbl_pr = table._tbl.tblPr
+    existing = tbl_pr.find(qn("w:tblBorders"))
     if existing is not None:
-        tblPr.remove(existing)
+        tbl_pr.remove(existing)
 
-    tblBorders = OxmlElement("w:tblBorders")
+    tbl_borders = OxmlElement("w:tblBorders")
     for border, attrs in border_spec.items():
         border_element = OxmlElement(f"w:{border}")
         for key, value in attrs.items():
             border_element.set(qn(f"w:{key}"), str(value))
-        tblBorders.append(border_element)
-    tblPr.append(tblBorders)
+        tbl_borders.append(border_element)
+    tbl_pr.append(tbl_borders)
 
 def set_table_cell_margins(table, top=40, left=80, bottom=40, right=80):
-    tblPr = table._tbl.tblPr
-    existing = tblPr.find(qn("w:tblCellMar"))
+    tbl_pr = table._tbl.tblPr
+    existing = tbl_pr.find(qn("w:tblCellMar"))
     if existing is not None:
-        tblPr.remove(existing)
+        tbl_pr.remove(existing)
 
-    tblCellMar = OxmlElement("w:tblCellMar")
+    tbl_cell_mar = OxmlElement("w:tblCellMar")
     for side, value in (("top", top), ("left", left), ("bottom", bottom), ("right", right)):
         side_element = OxmlElement(f"w:{side}")
         side_element.set(qn("w:w"), str(value))
         side_element.set(qn("w:type"), "dxa")
-        tblCellMar.append(side_element)
-    tblPr.append(tblCellMar)
+        tbl_cell_mar.append(side_element)
+    tbl_pr.append(tbl_cell_mar)
 
 def deep_merge_dict(base, override):
     merged = dict(base)
@@ -138,24 +119,10 @@ def deep_merge_dict(base, override):
             merged[key] = value
     return merged
 
-def resolve_config_path(path_value, base_dir):
-    cleaned = str(path_value).strip()
-    if not cleaned:
-        return base_dir
-    expanded = os.path.expanduser(cleaned)
-    if os.path.isabs(expanded):
-        return expanded
-    return os.path.join(base_dir, expanded)
-
-def is_same_path(path_a, path_b):
-    return os.path.normcase(os.path.abspath(path_a)) == os.path.normcase(os.path.abspath(path_b))
-
 def get_theme_font(theme, config):
     theme_font = theme.get("font", {})
 
     font_name = theme_font.get("name") or config.get("diff_font", "Courier New")
-    if theme_font.get("prefer_consolas_when_default_courier_new", False) and font_name == "Courier New":
-        font_name = "Consolas"
 
     theme_size = theme_font.get("size")
     if theme_size is None:
@@ -188,10 +155,8 @@ def build_border_attrs(side_config, default_config):
 
 def build_table_border_spec(theme):
     table_borders_cfg = theme.get("table_borders", {})
-    default_side = table_borders_cfg.get(
-        "default",
-        {"visible": False, "style": "single", "weight_pt": 0.5, "color": "auto", "space": 0},
-    )
+    default_side_cfg = table_borders_cfg.get("default", {})
+    default_side = default_side_cfg if isinstance(default_side_cfg, dict) else {}
 
     return {
         "top": build_border_attrs(table_borders_cfg.get("top", {}), default_side),
@@ -263,7 +228,7 @@ def load_theme(theme_name, themes_dir, overrides_data=None, excluded_filenames=N
 def apply_table_theme_style(table, theme):
     table.autofit = False
 
-    margins = theme.get("table_cell_margins_dxa", {})
+    margins = theme.get("table_cell_margins", {})
     set_table_cell_margins(
         table,
         top=int(margins.get("top", 40)),
@@ -286,16 +251,9 @@ with open(config_file, "r", encoding="utf-8") as f:
 
 file_encoding = config.get("file_encoding", "utf-8")
 themes_dir = os.path.join(script_dir, "themes")
-theme_overrides_dir_cfg = config.get("theme_overrides_path", themes_dir)
-theme_overrides_dir = resolve_config_path(theme_overrides_dir_cfg, script_dir)
-theme_overrides_file = str(config.get("theme_overrides_file", "_overrides.json")).strip()
-theme_overrides_path = (
-    os.path.join(theme_overrides_dir, theme_overrides_file) if theme_overrides_file else None
-)
+theme_overrides_path = os.path.join(themes_dir, "_overrides.json")
 theme_overrides = load_theme_overrides(theme_overrides_path)
-excluded_theme_files = []
-if theme_overrides_path and is_same_path(os.path.dirname(theme_overrides_path), themes_dir):
-    excluded_theme_files.append(os.path.basename(theme_overrides_path))
+excluded_theme_files = [os.path.basename(theme_overrides_path)]
 theme_name = str(config.get("theme", "old")).strip() or "old"
 theme = load_theme(
     theme_name,
@@ -303,9 +261,6 @@ theme = load_theme(
     overrides_data=theme_overrides,
     excluded_filenames=excluded_theme_files,
 )
-theme_style = str(theme.get("style", "legacy")).lower()
-is_modern_theme = theme_style == "modern"
-
 # ------------------------------------------------------------------------------
 # Pygments style configuration
 
@@ -532,10 +487,7 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
     bold_symbols = bool(theme_font.get("bold_symbols", False))
     center_symbols = bool(theme_font.get("center_symbols", False))
     line_spacing = float(theme_font.get("line_spacing", 1.0))
-    row_border_behavior = str(
-        theme.get("row_border_behavior", "none" if is_modern_theme else "merge")
-    ).strip().lower()
-    use_pygments_colors = bool(theme.get("use_pygments_colors", True))
+    use_syntax_highlighting = bool(theme.get("use_syntax_highlighting", True))
 
     # Skip unchanged lines if configured to do so
     include_unchanged = config.get("include_unchanged_lines", True)
@@ -549,9 +501,7 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
         diff_lines = filtered_diff_lines
         line_numbers = filtered_line_numbers
 
-    total_rows = len(diff_lines)
-
-    for idx, line in enumerate(diff_lines):
+    for line in diff_lines:
         row_cells = table.add_row().cells
         symbol_cell = row_cells[0]
         code_cell = row_cells[1]
@@ -573,29 +523,6 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
             shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), fill))
             cell._element.get_or_add_tcPr().append(shading)
             cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-
-        if row_border_behavior == "none":
-            remove_cell_border(symbol_cell)
-            remove_cell_border(code_cell)
-        elif row_border_behavior == "merge":
-            borders_to_remove_symbol = ["right"]
-            borders_to_remove_code = ["left"]
-
-            if idx == 0:
-                borders_to_remove_symbol.append("bottom")
-                borders_to_remove_code.append("bottom")
-            elif idx == total_rows - 1:
-                borders_to_remove_symbol.append("top")
-                borders_to_remove_code.append("top")
-            else:
-                borders_to_remove_symbol.extend(["top", "bottom"])
-                borders_to_remove_code.extend(["top", "bottom"])
-
-            remove_cell_border(symbol_cell, borders=borders_to_remove_symbol)
-            remove_cell_border(code_cell, borders=borders_to_remove_code)
-        else:
-            # preserve cell borders from table/theme configuration
-            pass
 
         symbol_paragraph = symbol_cell.paragraphs[0]
         symbol_paragraph.clear()
@@ -627,7 +554,7 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
             run.font.name = diff_font_name
             run.font.size = diff_font_size_pt
 
-            style_str = token_styles.get(ttype) if use_pygments_colors else None
+            style_str = token_styles.get(ttype) if use_syntax_highlighting else None
             if style_str:
                 for part in style_str.split():
                     if part == "bold":

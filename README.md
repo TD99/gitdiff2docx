@@ -63,13 +63,10 @@ GitDiff2Docx can be customized using a `config.json` file placed in the same dir
 - Set `"theme": "<name>"` in `config.json` (without `.json`).
 - Built-in themes are `old`, `modern`, `modern-atlas`, `modern-carbon`, `modern-sand`, and `modern-dark`.
 - Add your own theme by creating `themes/<your-theme-name>.json`.
-- Optional global overrides can be applied by creating `themes/overrides.json`.
-- Override file location is configurable via `theme_overrides_path` and `theme_overrides_file` in `config.json`.
+- Optional global overrides can be applied by creating `themes/_overrides.json`.
 - Overrides are deep-merged into the selected theme, so only provided subkeys are replaced.
 - Theme-level font settings are available via `font.name` and `font.size` (applies to code tables only).
 - Theme-level border settings are available via `table_borders` (`visible`, `style`, `weight_pt`, `color`, `space`).
-- `row_border_behavior` controls per-row cell border behavior (`none`, `merge`, `preserve`).
-- `use_pygments_colors` lets a theme disable token colors (useful for dark themes).
 
 ## Localization
 - The default interface and output language is German (`de`).

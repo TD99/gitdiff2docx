@@ -1,22 +1,14 @@
 {
-    "style": "modern",
     "symbol_column_width_cm": 0.84,
-    "row_border_behavior": "none",
-    "use_pygments_colors": true,
-    "table_cell_margins_dxa": {
+    "use_syntax_highlighting": true,
+    "table_cell_margins": {
         "top": 55,
         "left": 90,
         "bottom": 55,
         "right": 90
     },
     "table_borders": {
-        "default": {
-            "visible": false,
-            "style": "single",
-            "weight_pt": 0.5,
-            "color": "C9D2E0",
-            "space": 0
-        },
+        "default": {},
         "top": {},
         "left": {},
         "bottom": {},
@@ -41,7 +33,6 @@
     "font": {
         "name": "Consolas",
         "size": 9,
-        "prefer_consolas_when_default_courier_new": false,
         "min_size": 0,
         "bold_symbols": true,
         "center_symbols": true,

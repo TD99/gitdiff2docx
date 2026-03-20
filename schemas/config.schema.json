@@ -27,16 +27,6 @@
             "default": "old",
             "examples": ["old", "modern", "modern-atlas", "modern-carbon", "modern-sand", "modern-dark"]
         },
-        "theme_overrides_path": {
-            "type": "string",
-            "description": "Directory containing the global theme override JSON file; relative paths are resolved from the project/script directory",
-            "default": "themes"
-        },
-        "theme_overrides_file": {
-            "type": "string",
-            "description": "Filename of the global theme override JSON that is deep-merged into the selected theme",
-            "default": "_overrides.json"
-        },
         "diff_font": {
             "type": "string",
             "description": "Font family to use for diff content in the Word document",

@@ -1,22 +1,14 @@
 {
-    "style": "legacy",
     "symbol_column_width_cm": 0.57,
-    "row_border_behavior": "merge",
-    "use_pygments_colors": true,
-    "table_cell_margins_dxa": {
+    "use_syntax_highlighting": true,
+    "table_cell_margins": {
         "top": 40,
         "left": 80,
         "bottom": 40,
         "right": 80
     },
     "table_borders": {
-        "default": {
-            "visible": false,
-            "style": "single",
-            "weight_pt": 0.5,
-            "color": "D9DDE3",
-            "space": 0
-        },
+        "default": {},
         "top": {},
         "left": {},
         "bottom": {},
@@ -41,7 +33,6 @@
     "font": {
         "name": "Courier New",
         "size": 8,
-        "prefer_consolas_when_default_courier_new": false,
         "min_size": 0,
         "bold_symbols": false,
         "center_symbols": false,
