@@ -1,8 +1,10 @@
 import os
+import argparse
 import json
 import subprocess
 import io
 import mimetypes
+from copy import deepcopy
 
 import pathspec
 
@@ -118,6 +120,171 @@ def deep_merge_dict(base, override):
         else:
             merged[key] = value
     return merged
+
+schema_cache = {}
+
+def load_json_from_path(file_path):
+    abs_path = os.path.abspath(file_path)
+    if abs_path not in schema_cache:
+        with open(abs_path, "r", encoding="utf-8") as f:
+            schema_cache[abs_path] = json.load(f)
+    return schema_cache[abs_path], abs_path
+
+def resolve_json_pointer(document, pointer):
+    if not pointer:
+        return document
+    if pointer.startswith("/"):
+        node = document
+        for raw_part in pointer.split("/")[1:]:
+            part = raw_part.replace("~1", "/").replace("~0", "~")
+            node = node[part]
+        return node
+    return document
+
+def resolve_schema_ref(ref_value, current_schema_path):
+    if "#" in ref_value:
+        path_part, pointer_part = ref_value.split("#", 1)
+        pointer = pointer_part if pointer_part.startswith("/") else f"/{pointer_part}" if pointer_part else ""
+    else:
+        path_part, pointer = ref_value, ""
+
+    if not path_part:
+        doc, doc_path = load_json_from_path(current_schema_path)
+    else:
+        target_path = os.path.normpath(os.path.join(os.path.dirname(current_schema_path), path_part))
+        doc, doc_path = load_json_from_path(target_path)
+
+    return resolve_json_pointer(doc, pointer), doc_path
+
+def merge_schema_fragments(base, override):
+    result = deepcopy(base)
+    for key, value in override.items():
+        if key == "required":
+            existing = result.get("required", [])
+            for required_key in value:
+                if required_key not in existing:
+                    existing.append(required_key)
+            result["required"] = existing
+        elif key in ("properties", "definitions"):
+            current = result.get(key, {})
+            merged = deepcopy(current)
+            for prop_key, prop_val in value.items():
+                if prop_key in merged and isinstance(merged[prop_key], dict) and isinstance(prop_val, dict):
+                    merged[prop_key] = merge_schema_fragments(merged[prop_key], prop_val)
+                else:
+                    merged[prop_key] = deepcopy(prop_val)
+            result[key] = merged
+        else:
+            result[key] = deepcopy(value)
+    return result
+
+def expand_schema_node(schema_node, current_schema_path):
+    expanded = {}
+
+    if "$ref" in schema_node:
+        ref_node, ref_path = resolve_schema_ref(schema_node["$ref"], current_schema_path)
+        expanded = merge_schema_fragments(expanded, expand_schema_node(ref_node, ref_path))
+
+    if "allOf" in schema_node:
+        for sub_schema in schema_node["allOf"]:
+            expanded = merge_schema_fragments(expanded, expand_schema_node(sub_schema, current_schema_path))
+
+    inline_schema = {}
+    for key, value in schema_node.items():
+        if key in ("$ref", "allOf"):
+            continue
+        if key in ("properties", "definitions") and isinstance(value, dict):
+            expanded_map = {}
+            for nested_key, nested_schema in value.items():
+                if isinstance(nested_schema, dict):
+                    expanded_map[nested_key] = expand_schema_node(nested_schema, current_schema_path)
+                else:
+                    expanded_map[nested_key] = deepcopy(nested_schema)
+            inline_schema[key] = expanded_map
+        else:
+            inline_schema[key] = deepcopy(value)
+
+    expanded = merge_schema_fragments(expanded, inline_schema)
+    return expanded
+
+def build_defaults_from_schema_node(schema_node, current_schema_path, include_optional_defaults=False):
+    expanded = expand_schema_node(schema_node, current_schema_path)
+
+    if "default" in expanded:
+        return deepcopy(expanded["default"])
+
+    if expanded.get("type") == "object" or "properties" in expanded:
+        result = {}
+        properties = expanded.get("properties", {})
+
+        for key in expanded.get("required", []):
+            prop_schema = properties.get(key)
+            if prop_schema is None:
+                continue
+            result[key] = build_defaults_from_schema_node(prop_schema, current_schema_path)
+
+        if include_optional_defaults:
+            for key, prop_schema in properties.items():
+                if key in result:
+                    continue
+                prop_expanded = expand_schema_node(prop_schema, current_schema_path)
+                if "default" in prop_expanded:
+                    result[key] = deepcopy(prop_expanded["default"])
+
+        return result
+
+    if "default" in expanded:
+        return deepcopy(expanded["default"])
+
+    schema_type = expanded.get("type")
+    if schema_type == "string":
+        return ""
+    if schema_type == "boolean":
+        return False
+    if schema_type in ("integer", "number"):
+        return 0
+    if schema_type == "array":
+        return []
+    return None
+
+def build_default_theme_template():
+    schema_path = os.path.join(script_dir, "schemas", "theme.schema.json")
+    schema_root, abs_schema_path = load_json_from_path(schema_path)
+    return build_defaults_from_schema_node(
+        schema_root,
+        abs_schema_path,
+        include_optional_defaults=True,
+    )
+
+def is_valid_theme_filename(theme_name):
+    invalid_chars = set('<>:"/\\|?*')
+    if not theme_name:
+        return False
+    if theme_name.startswith("."):
+        return False
+    if theme_name.lower() == "_overrides":
+        return False
+    return not any(char in invalid_chars for char in theme_name)
+
+def create_theme_interactive(themes_dir):
+    while True:
+        theme_name = input("Enter new theme name (without .json): ").strip()
+        if not is_valid_theme_filename(theme_name):
+            print_red("Invalid theme name. Avoid empty names, leading dots, reserved '_overrides', and filename-invalid characters.")
+            continue
+
+        theme_path = os.path.join(themes_dir, f"{theme_name}.json")
+        if os.path.exists(theme_path):
+            print_red(f"Theme already exists: {theme_path}")
+            continue
+
+        theme_data = build_default_theme_template()
+        with open(theme_path, "w", encoding="utf-8") as f:
+            json.dump(theme_data, f, indent=4)
+            f.write("\n")
+
+        print_green(f"Created theme: {theme_path}")
+        return
 
 def get_theme_font(theme, config):
     theme_font = theme.get("font", {})
@@ -240,6 +407,22 @@ def apply_table_theme_style(table, theme):
 
 # ------------------------------------------------------------------------------
 # Configuration
+
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument(
+    "--create-theme",
+    action="store_true",
+    help="Create a new theme file with required fields set to default values and exit.",
+)
+args = arg_parser.parse_args()
+
+if args.create_theme:
+    themes_dir_for_creation = os.path.join(script_dir, "themes")
+    if not os.path.isdir(themes_dir_for_creation):
+        print_red(f"Error: Themes directory not found: {themes_dir_for_creation}")
+        exit(1)
+    create_theme_interactive(themes_dir_for_creation)
+    exit(0)
 
 config_file = os.path.join(script_dir, "config.json")
 if not os.path.exists(config_file):

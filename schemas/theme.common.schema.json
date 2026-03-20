@@ -31,7 +31,8 @@
                     "default": 0.5
                 },
                 "color": {
-                    "$ref": "#/definitions/borderColor"
+                    "$ref": "#/definitions/borderColor",
+                    "default": "auto"
                 },
                 "space": {
                     "type": "integer",
@@ -43,6 +44,12 @@
         },
         "tableCellMargins": {
             "type": "object",
+            "default": {
+                "top": 40,
+                "left": 80,
+                "bottom": 40,
+                "right": 80
+            },
             "properties": {
                 "top": {
                     "type": "integer",
@@ -69,6 +76,15 @@
         },
         "tableBorders": {
             "type": "object",
+            "default": {
+                "default": {},
+                "top": {},
+                "left": {},
+                "bottom": {},
+                "right": {},
+                "inside_h": {},
+                "inside_v": {}
+            },
             "properties": {
                 "default": {
                     "$ref": "#/definitions/borderConfig"
@@ -96,6 +112,15 @@
         },
         "colors": {
             "type": "object",
+            "default": {
+                "add_fill": "D0FFD0",
+                "remove_fill": "FFD0D0",
+                "neutral_fill": "F5F5F5",
+                "add_symbol": "000000",
+                "remove_symbol": "000000",
+                "neutral_symbol": "000000",
+                "default_code": "000000"
+            },
             "properties": {
                 "add_fill": {
                     "$ref": "#/definitions/hexColor"
@@ -123,6 +148,11 @@
         },
         "symbols": {
             "type": "object",
+            "default": {
+                "add": "+",
+                "remove": "-",
+                "neutral": "="
+            },
             "properties": {
                 "add": {
                     "type": "string",
@@ -141,28 +171,42 @@
         },
         "font": {
             "type": "object",
+            "default": {
+                "name": "Courier New",
+                "size": 8,
+                "min_size": 0,
+                "bold_symbols": false,
+                "center_symbols": false,
+                "line_spacing": 1.0
+            },
             "properties": {
                 "name": {
                     "type": "string",
-                    "minLength": 1
+                    "minLength": 1,
+                    "default": "Courier New"
                 },
                 "size": {
                     "type": "integer",
-                    "minimum": 1
+                    "minimum": 1,
+                    "default": 8
                 },
                 "min_size": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "default": 0
                 },
                 "bold_symbols": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "default": false
                 },
                 "center_symbols": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "default": false
                 },
                 "line_spacing": {
                     "type": "number",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "default": 1.0
                 }
             },
             "additionalProperties": false
@@ -172,7 +216,8 @@
             "properties": {
                 "$schema": {
                     "type": "string",
-                    "description": "Optional JSON Schema reference for editor validation support."
+                    "description": "Optional JSON Schema reference for editor validation support.",
+                    "default": "../schemas/theme.schema.json"
                 },
                 "symbol_column_width_cm": {
                     "type": "number",

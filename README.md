@@ -27,6 +27,10 @@ Run the script and follow the interactive prompts:
 ```bash
 python diff_tool.py
 ```
+Create a new theme template with all required fields prefilled:
+```bash
+python diff_tool.py --create-theme
+```
 Select a theme in `config.json`:
 ```json
 "theme": "modern"

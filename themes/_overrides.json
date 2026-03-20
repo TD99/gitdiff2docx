@@ -1,6 +1,3 @@
 {
-  "$schema": "../schemas/theme.overrides.schema.json",
-  "font": {
-    "name": "Comic Sans MS"
-  }
+  "$schema": "../schemas/theme.overrides.schema.json"
 }
