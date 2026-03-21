@@ -2,3 +2,4 @@ python-docx
 pygments
 pillow
 pathspec
+click
