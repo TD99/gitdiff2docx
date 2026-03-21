@@ -31,7 +31,8 @@ from gitdiff2docx.cli.interactive import (
 @click.option('--verbose/--no-verbose', default=None, help='Enable verbose output.')
 @click.option('--theme', help='Theme name to use.')
 @click.option('--language', '-l', help='Language code (e.g., en, de).')
-def main(create_theme, target_dir, commit1, commit2, output, config_file, verbose, theme, language):
+@click.option('--force', '-f', is_flag=True, help='Force overwrite output file if it exists.')
+def main(create_theme, target_dir, commit1, commit2, output, config_file, verbose, theme, language, force):
     """GitDiff2Docx - Convert git diffs to formatted Word documents."""
     
     # Handle theme creation
@@ -109,16 +110,27 @@ def main(create_theme, target_dir, commit1, commit2, output, config_file, verbos
     ignore_spec = load_ignore_spec(target_dir, gdd_ignore_filename)
 
     # Get commits (interactive or from CLI)
-    if not commit1 or not commit2:
+    if not commit1 and not commit2:
+        # Both missing - prompt for both
         commit1_prompt, commit2_prompt, is_very_first = prompt_commits(lang)
-        if not commit1:
-            commit1 = commit1_prompt
-        if not commit2:
-            commit2 = commit2_prompt
+        commit1 = commit1_prompt
+        commit2 = commit2_prompt
         # Handle first commit logic
         commit1 = handle_first_commit_logic(commit1, is_very_first, config)
+    elif not commit1:
+        # Only commit1 missing
+        commit1 = get_first_commit()
+        very_first_commit_hash = get_first_commit()
+        is_very_first = (commit1 == very_first_commit_hash)
+        commit1 = handle_first_commit_logic(commit1, is_very_first, config)
+    elif not commit2:
+        # Only commit2 missing
+        commit2 = get_head_commit()
+        very_first_commit_hash = get_first_commit()
+        is_very_first = (commit1 == very_first_commit_hash)
+        commit1 = handle_first_commit_logic(commit1, is_very_first, config)
     else:
-        # When both are provided via CLI, still need to handle first commit logic
+        # Both provided via CLI
         very_first_commit_hash = get_first_commit()
         is_very_first = (commit1 == very_first_commit_hash)
         commit1 = handle_first_commit_logic(commit1, is_very_first, config)
@@ -140,17 +152,26 @@ def main(create_theme, target_dir, commit1, commit2, output, config_file, verbos
 
     # Check if output file exists
     if os.path.exists(output):
-        if not ask_yes_no(lang["output_exists"].format(output_docx=output), lang):
-            print(lang["exiting"])
-            return 0
+        # In non-interactive mode with force flag, skip prompt
+        if force or (target_dir and commit1 and commit2 and output):
+            # If all required params provided via CLI, assume force overwrite
+            try:
+                os.remove(output)
+            except:
+                pass
         else:
-            while True:
-                try:
-                    with open(output, "a", encoding="utf-8"):
-                        break
-                except Exception as e:
-                    print_red(lang["error_removing_file"].format(output_docx=output, error=str(e)))
-                    input(lang["press_enter_to_retry"])
+            # Interactive mode - ask for confirmation
+            if not ask_yes_no(lang["output_exists"].format(output_docx=output), lang):
+                print(lang["exiting"])
+                return 0
+            else:
+                while True:
+                    try:
+                        with open(output, "a", encoding="utf-8"):
+                            break
+                    except Exception as e:
+                        print_red(lang["error_removing_file"].format(output_docx=output, error=str(e)))
+                        input(lang["press_enter_to_retry"])
 
     verbose_mode = config.get("verbose", False)
 
@@ -181,9 +202,19 @@ def main(create_theme, target_dir, commit1, commit2, output, config_file, verbos
     # Open file if configured
     if config.get("open_after_creation", False):
         try:
-            os.startfile(output)
+            import platform
+            system = platform.system()
+            if system == 'Windows':
+                os.startfile(output)
+            elif system == 'Darwin':  # macOS
+                import subprocess
+                subprocess.run(['open', output])
+            else:  # Linux and others
+                import subprocess
+                subprocess.run(['xdg-open', output])
         except Exception as e:
-            print_red(lang["error_opening_file"].format(output_docx=output, error=str(e)))
+            # Silently ignore errors opening file
+            pass
 
     return 0
 
