@@ -1,0 +1,11 @@
+include README.md
+include USAGE.md
+include LICENSE
+include requirements.txt
+include config.json
+recursive-include lang *.json
+recursive-include schemas *.json
+recursive-include themes *.json
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store

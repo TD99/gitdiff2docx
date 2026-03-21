@@ -174,3 +174,4 @@ cython_debug/
 *.docx
 *.dist
 *.exe
+temp_config.json
