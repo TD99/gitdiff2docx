@@ -1,0 +1,42 @@
+{
+    "$schema": "../schemas/theme.schema.json",
+    "symbol_column_width_cm": 0.57,
+    "use_syntax_highlighting": true,
+    "table_cell_margins": {
+        "top": 40,
+        "left": 80,
+        "bottom": 40,
+        "right": 80
+    },
+    "table_borders": {
+        "default": {},
+        "top": {},
+        "left": {},
+        "bottom": {},
+        "right": {},
+        "inside_h": {},
+        "inside_v": {}
+    },
+    "colors": {
+        "add_fill": "D0FFD0",
+        "remove_fill": "FFD0D0",
+        "neutral_fill": "F5F5F5",
+        "add_symbol": "000000",
+        "remove_symbol": "000000",
+        "neutral_symbol": "000000",
+        "default_code": "000000"
+    },
+    "symbols": {
+        "add": "+",
+        "remove": "-",
+        "neutral": "="
+    },
+    "font": {
+        "name": "Courier New",
+        "size": 8,
+        "min_size": 0,
+        "bold_symbols": false,
+        "center_symbols": false,
+        "line_spacing": 1.0
+    }
+}

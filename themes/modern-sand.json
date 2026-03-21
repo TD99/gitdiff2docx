@@ -1,0 +1,42 @@
+{
+    "$schema": "../schemas/theme.schema.json",
+    "symbol_column_width_cm": 0.9,
+    "use_syntax_highlighting": true,
+    "table_cell_margins": {
+        "top": 64,
+        "left": 100,
+        "bottom": 64,
+        "right": 100
+    },
+    "table_borders": {
+        "default": {},
+        "top": {},
+        "left": {},
+        "bottom": {},
+        "right": {},
+        "inside_h": {},
+        "inside_v": {}
+    },
+    "colors": {
+        "add_fill": "EFF4E8",
+        "remove_fill": "F9EDEA",
+        "neutral_fill": "F6F1E8",
+        "add_symbol": "5C7A43",
+        "remove_symbol": "A35C4F",
+        "neutral_symbol": "7A7264",
+        "default_code": "4A433A"
+    },
+    "symbols": {
+        "add": "+",
+        "remove": "-",
+        "neutral": "="
+    },
+    "font": {
+        "name": "Cascadia Mono",
+        "size": 10,
+        "min_size": 0,
+        "bold_symbols": false,
+        "center_symbols": true,
+        "line_spacing": 1.16
+    }
+}

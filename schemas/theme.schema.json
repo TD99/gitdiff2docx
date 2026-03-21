@@ -1,0 +1,47 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "theme.schema.json",
+    "title": "GitDiff2Docx Theme",
+    "description": "Strict schema for complete theme files.",
+    "allOf": [
+        {
+            "$ref": "./theme.common.schema.json#/definitions/themeObject"
+        },
+        {
+            "required": [
+                "symbol_column_width_cm",
+                "use_syntax_highlighting",
+                "table_cell_margins",
+                "table_borders",
+                "colors",
+                "symbols",
+                "font"
+            ],
+            "properties": {
+                "table_cell_margins": {
+                    "required": ["top", "left", "bottom", "right"]
+                },
+                "table_borders": {
+                    "required": ["default", "top", "left", "bottom", "right", "inside_h", "inside_v"]
+                },
+                "colors": {
+                    "required": [
+                        "add_fill",
+                        "remove_fill",
+                        "neutral_fill",
+                        "add_symbol",
+                        "remove_symbol",
+                        "neutral_symbol",
+                        "default_code"
+                    ]
+                },
+                "symbols": {
+                    "required": ["add", "remove", "neutral"]
+                },
+                "font": {
+                    "required": ["name", "size", "min_size", "bold_symbols", "center_symbols", "line_spacing"]
+                }
+            }
+        }
+    ]
+}

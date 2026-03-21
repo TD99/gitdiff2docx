@@ -21,6 +21,12 @@
             "description": "Enable verbose output for detailed logging",
             "default": true
         },
+        "theme": {
+            "type": "string",
+            "description": "Name of the theme file in the themes folder (without .json)",
+            "default": "classic",
+            "examples": ["classic", "modern", "modern-atlas", "modern-carbon", "modern-sand", "modern-dark"]
+        },
         "diff_font": {
             "type": "string",
             "description": "Font family to use for diff content in the Word document",
@@ -44,39 +50,6 @@
             "minimum": 1,
             "maximum": 9,
             "default": 3
-        },
-        "add_color": {
-            "type": "string",
-            "description": "Hex color code for added lines in the diff (without #)",
-            "pattern": "^[0-9A-Fa-f]{6}$",
-            "default": "D0FFD0"
-        },
-        "remove_color": {
-            "type": "string",
-            "description": "Hex color code for removed lines in the diff (without #)",
-            "pattern": "^[0-9A-Fa-f]{6}$",
-            "default": "FFD0D0"
-        },
-        "neutral_color": {
-            "type": "string",
-            "description": "Hex color code for unchanged lines in the diff (without #)",
-            "pattern": "^[0-9A-Fa-f]{6}$",
-            "default": "F5F5F5"
-        },
-        "add_symbol": {
-            "type": "string",
-            "description": "Symbol used to indicate added lines in the diff",
-            "default": "+"
-        },
-        "remove_symbol": {
-            "type": "string",
-            "description": "Symbol used to indicate removed lines in the diff",
-            "default": "-"
-        },
-        "neutral_symbol": {
-            "type": "string",
-            "description": "Symbol used to indicate unchanged lines in the diff",
-            "default": "="
         },
         "file_encoding": {
             "type": "string",
