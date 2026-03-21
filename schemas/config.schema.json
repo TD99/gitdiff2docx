@@ -24,8 +24,8 @@
         "theme": {
             "type": "string",
             "description": "Name of the theme file in the themes folder (without .json)",
-            "default": "old",
-            "examples": ["old", "modern", "modern-atlas", "modern-carbon", "modern-sand", "modern-dark"]
+            "default": "classic",
+            "examples": ["classic", "modern", "modern-atlas", "modern-carbon", "modern-sand", "modern-dark"]
         },
         "diff_font": {
             "type": "string",

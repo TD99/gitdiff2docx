@@ -11,9 +11,7 @@ A Python utility that converts git diffs into formatted Word documents. The tool
 - Support for multiple file changes in a single report
 - Configurable defaults via config.json
 - Ignore specific files or directories using .gddignore
-- Theme-based code-table styling via `config.json` (`theme`)
-- Built-in themes: `old`, `modern`, `modern-atlas`, `modern-carbon`, `modern-sand`, `modern-dark`
-- Custom themes by adding JSON files in `themes/`
+- Built-in and custom themes
 
 ## Installation
 1. Clone the repository
@@ -26,14 +24,6 @@ A Python utility that converts git diffs into formatted Word documents. The tool
 Run the script and follow the interactive prompts:
 ```bash
 python diff_tool.py
-```
-Create a new theme template with all required fields prefilled:
-```bash
-python diff_tool.py --create-theme
-```
-Select a theme in `config.json`:
-```json
-"theme": "modern"
 ```
 
 The tool will ask for:
@@ -65,12 +55,23 @@ GitDiff2Docx can be customized using a `config.json` file placed in the same dir
 ### Themes
 - Theme files are loaded from the `themes/` folder.
 - Set `"theme": "<name>"` in `config.json` (without `.json`).
-- Built-in themes are `old`, `modern`, `modern-atlas`, `modern-carbon`, `modern-sand`, and `modern-dark`.
+- Built-in themes are `classic`, `modern`, `modern-atlas`, `modern-carbon`, `modern-sand`, and `modern-dark`.
 - Add your own theme by creating `themes/<your-theme-name>.json`.
 - Optional global overrides can be applied by creating `themes/_overrides.json`.
 - Overrides are deep-merged into the selected theme, so only provided subkeys are replaced.
 - Theme-level font settings are available via `font.name` and `font.size` (applies to code tables only).
 - Theme-level border settings are available via `table_borders` (`visible`, `style`, `weight_pt`, `color`, `space`).
+
+#### Creating a New Theme
+Create a new theme template with all required fields prefilled:
+```bash
+python diff_tool.py --create-theme
+```
+
+Select the theme in `config.json`:
+```json
+"theme": "<your-theme-name>"
+```
 
 ## Localization
 - The default interface and output language is German (`de`).

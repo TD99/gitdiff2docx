@@ -353,11 +353,11 @@ def load_theme_overrides(overrides_file_path):
             overrides_data = json.load(f)
     except Exception as e:
         print_red(f"Error: Failed to read theme override file '{overrides_file_path}': {e}")
-        exit()
+        exit(1)
 
     if not isinstance(overrides_data, dict):
         print_red(f"Error: Theme override file '{overrides_file_path}' must contain a JSON object.")
-        exit()
+        exit(1)
 
     return overrides_data
 
@@ -367,11 +367,22 @@ def load_theme(theme_name, themes_dir, overrides_data=None, excluded_filenames=N
         print_red(f"Error: No theme files found in '{themes_dir}'.")
         exit()
 
-    theme_path = os.path.join(themes_dir, f"{theme_name}.json")
-    if not os.path.exists(theme_path):
+    if not is_valid_theme_filename(theme_name):
+        print_red(
+            f"Error: Invalid theme name '{theme_name}'. Available themes: {', '.join(available_themes)}"
+        )
+        exit()
+
+    if theme_name not in available_themes:
         print_red(
             f"Error: Theme '{theme_name}' not found in '{themes_dir}'. Available themes: {', '.join(available_themes)}"
         )
+        exit()
+
+    themes_dir_abs = os.path.abspath(themes_dir)
+    theme_path = os.path.abspath(os.path.normpath(os.path.join(themes_dir_abs, f"{theme_name}.json")))
+    if os.path.commonpath([themes_dir_abs, theme_path]) != themes_dir_abs:
+        print_red(f"Error: Invalid theme path for theme '{theme_name}'.")
         exit()
 
     try:
@@ -437,7 +448,7 @@ themes_dir = os.path.join(script_dir, "themes")
 theme_overrides_path = os.path.join(themes_dir, "_overrides.json")
 theme_overrides = load_theme_overrides(theme_overrides_path)
 excluded_theme_files = [os.path.basename(theme_overrides_path)]
-theme_name = str(config.get("theme", "old")).strip() or "old"
+theme_name = str(config.get("theme", "classic")).strip() or "classic"
 theme = load_theme(
     theme_name,
     themes_dir,
@@ -631,23 +642,8 @@ add_legend_table(doc)
 doc.add_page_break()
 doc.add_heading(lang["diffs"], level=config.get("heading_level", 2))
 
-# Extract line numbers from git diff
-def extract_line_numbers(diff_lines):
-    line_numbers = []
-    current_line = 0
-    for line in diff_lines:
-        if line.startswith("@@"):
-            parts = line.split(" ")
-            new_file_info = parts[2]
-            start_line = int(new_file_info.split(",")[0][1:])
-            current_line = start_line
-        elif not line.startswith("-"):
-            line_numbers.append(current_line)
-            current_line += 1
-    return line_numbers
-
 # Add a formatted and syntax-highlighted code diff table
-def add_diff_table(document, diff_lines, line_numbers, lexer):
+def add_diff_table(document, diff_lines, lexer):
     table = document.add_table(rows=0, cols=2)
     table.style = "Table Grid"
     apply_table_theme_style(table, theme)
@@ -675,14 +671,7 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
     # Skip unchanged lines if configured to do so
     include_unchanged = config.get("include_unchanged_lines", True)
     if not include_unchanged:
-        filtered_diff_lines = []
-        filtered_line_numbers = []
-        for line, line_num in zip(diff_lines, line_numbers):
-            if not line.startswith(" "):
-                filtered_diff_lines.append(line)
-                filtered_line_numbers.append(line_num)
-        diff_lines = filtered_diff_lines
-        line_numbers = filtered_line_numbers
+        diff_lines = [line for line in diff_lines if not line.startswith(" ")]
 
     for line in diff_lines:
         row_cells = table.add_row().cells
@@ -703,7 +692,8 @@ def add_diff_table(document, diff_lines, line_numbers, lexer):
             symbol = neutral_symbol
 
         for cell in (symbol_cell, code_cell):
-            shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), fill))
+            fill_normalized = fill.lstrip("#") if isinstance(fill, str) else fill
+            shading = parse_xml(r'<w:shd {} w:fill="{}"/>'.format(nsdecls("w"), fill_normalized))
             cell._element.get_or_add_tcPr().append(shading)
             cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
@@ -844,8 +834,6 @@ for index, file in enumerate(changed_files):
 
     matcher = SequenceMatcher(None, old_content, new_content)
     diff_lines = []
-    line_nums = []
-
     old_idx = new_idx = 0
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -854,7 +842,6 @@ for index, file in enumerate(changed_files):
             if config.get("include_unchanged_lines", True):
                 for line in new_content[j1:j2]:
                     diff_lines.append(f" {line}")
-                    line_nums.append(new_idx + 1)
                     new_idx += 1
                     old_idx += 1
             else:
@@ -864,26 +851,22 @@ for index, file in enumerate(changed_files):
         elif tag == "replace":
             for line in old_content[i1:i2]:
                 diff_lines.append(f"-{line}")
-                line_nums.append(old_idx + 1)
                 old_idx += 1
             for line in new_content[j1:j2]:
                 diff_lines.append(f"+{line}")
-                line_nums.append(new_idx + 1)
                 new_idx += 1
         elif tag == "delete":
             for line in old_content[i1:i2]:
                 diff_lines.append(f"-{line}")
-                line_nums.append(old_idx + 1)
                 old_idx += 1
         elif tag == "insert":
             for line in new_content[j1:j2]:
                 diff_lines.append(f"+{line}")
-                line_nums.append(new_idx + 1)
                 new_idx += 1
 
     # Add Table if there are significant changes
     if diff_lines:
-        add_diff_table(doc, diff_lines, line_nums, lexer)
+        add_diff_table(doc, diff_lines, lexer)
     else:
         doc.add_paragraph(lang["no_significant_changes"], style="Italic")
 
